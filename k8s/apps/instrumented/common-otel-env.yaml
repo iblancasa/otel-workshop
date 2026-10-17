@@ -1,0 +1,31 @@
+# JSON patch applied to every Deployment that has a "language" label
+# (see kustomization.yaml). Adds the standard OTel SDK env vars that every
+# language SDK understands.
+# Pod name from the downward API, referenced below with $(POD_NAME).
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: OTEL_EXPORTER_OTLP_ENDPOINT, value: "http://otel-collector.observability.svc.cluster.local:4318" }
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: OTEL_EXPORTER_OTLP_PROTOCOL, value: "http/protobuf" }
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: OTEL_RESOURCE_ATTRIBUTES, value: "deployment.environment=workshop,k8s.pod.name=$(POD_NAME)" }
+# Stable HTTP semantic conventions everywhere, so the three languages
+# produce the same metric names (http.server.request.duration).
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: OTEL_SEMCONV_STABILITY_OPT_IN, value: "http" }
+# Short export intervals so the workshop feels live.
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: OTEL_METRIC_EXPORT_INTERVAL, value: "5000" }
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: OTEL_BSP_SCHEDULE_DELAY, value: "1000" }
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value: { name: OTEL_BLRP_SCHEDULE_DELAY, value: "1000" }

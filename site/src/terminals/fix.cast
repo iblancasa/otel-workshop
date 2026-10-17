@@ -1,0 +1,11 @@
+{"version":2,"width":100,"height":24,"timestamp":1792064059,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.DYjHDfMN4F","env":{"SHELL":"/bin/zsh"}}
+[0.02538, "o", "\u001b[1;32m$\u001b[0m make fix\r\n"]
+[0.045589, "o", "kubectl --context kind-otel-workshop -n shop set env deploy/orders WAREHOUSE_TIMEOUT_MS=250 WAREHOUSE_RETRIES=1\r\n"]
+[0.122468, "o", "deployment.apps/orders env updated\r\n"]
+[0.123652, "o", "kubectl --context kind-otel-workshop -n shop rollout status deploy/orders --timeout=120s\r\n"]
+[0.158317, "o", "Waiting for deployment \"orders\" rollout to finish: 1 old replicas are pending termination...\r\n"]
+[1.53908, "o", "Waiting for deployment \"orders\" rollout to finish: 1 old replicas are pending termination...\r\n"]
+[1.549048, "o", "deployment \"orders\" successfully rolled out\r\n"]
+[2.362681, "o", "\u001b[1;32m$\u001b[0m curl -s -w ' -> %{time_total}s\\n' -X POST localhost:8080/api/checkout -H 'content-type: application/json' -d '{\"sku\":\"EU-HOODIE-03\",\"qty\":1}'\r\n"]
+[3.092667, "o", "{\"order_id\":\"cfbd24eb\",\"sku\":\"EU-HOODIE-03\",\"qty\":1,\"warehouse\":{\"region\":\"eu-west\",\"mode\":\"fallback\"},\"payment\":{\"payment_id\":\"be03daf3\",\"amount\":55},\"elapsed_ms\":707} -> 0.712710s\r\n"]
+[3.897455, "x", "0"]

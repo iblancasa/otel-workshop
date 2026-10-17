@@ -1,0 +1,21 @@
+[1;32m$[0m grep -n 'start_as_current_span\|set_status\|record_exception' services/orders/warehouse.py
+7:  - span events for each timeout, record_exception + ERROR status at the end
+59:    with tracer.start_as_current_span("warehouse.reserve") as span:
+74:                with tracer.start_as_current_span("warehouse.call_primary") as call:
+96:            span.record_exception(last_exc)
+97:        span.set_status(Status(StatusCode.ERROR, f"{region} unreachable, used fallback"))
+99:        with tracer.start_as_current_span("warehouse.call_fallback"):
+[1;32m$[0m BUILDKIT_PROGRESS=plain make rebuild-orders 2>&1 | grep -E '^(#[0-9]+ (DONE|naming)|->|loaded|deployment)' | cut -c1-110
+#1 DONE 0.0s
+#3 DONE 0.0s
+#2 DONE 1.1s
+#4 DONE 0.0s
+#5 DONE 0.0s
+#6 DONE 0.0s
+#10 DONE 0.0s
+#11 naming to docker.io/workshop/orders:latest done
+#11 DONE 0.0s
+-> workshop/orders:latest
+loaded 1 images into kind cluster otel-workshop
+deployment.apps/orders restarted
+deployment "orders" successfully rolled out

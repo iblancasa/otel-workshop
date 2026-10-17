@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments
+  namespace: shop
+  labels: { app: payments, language: python }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: payments }
+  template:
+    metadata:
+      labels: { app: payments, language: python }
+    spec:
+      containers:
+        - name: payments
+          image: workshop/payments:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PORT, value: "8002" }
+          ports:
+            - { containerPort: 8002 }
+          readinessProbe:
+            tcpSocket: { port: 8002 }
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments
+  namespace: shop
+spec:
+  selector: { app: payments }
+  ports:
+    - { port: 8002, targetPort: 8002 }

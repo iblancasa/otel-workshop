@@ -1,0 +1,65 @@
+---
+title: The mystery of the slow API
+description: Finding production bottlenecks in real time with OpenTelemetry. A hands-on workshop on your laptop.
+template: splash
+hero:
+  tagline: A user says the button takes 8 seconds. CPU is fine. Logs say 200 OK. Find out why, with metrics, traces and logs, on your own laptop.
+  actions:
+    - text: Prepare your laptop
+      link: /otel-workshop/prepare/
+      icon: right-arrow
+      variant: primary
+    - text: Start the workshop
+      link: /otel-workshop/steps/00-complaint/
+      icon: rocket
+    - text: Repository
+      link: https://github.com/iblancasa/otel-workshop
+      icon: github
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## What you will do
+
+<CardGrid stagger>
+  <Card title="Run a broken shop on kind" icon="laptop">
+    Four services, three languages: Node.js, Python, Java. One button that sometimes takes 8 seconds. Nobody knows why.
+  </Card>
+  <Card title="Instrument without touching code" icon="setting">
+    Three environment variables turn on OpenTelemetry auto-instrumentation in all three languages. Zero lines of application code.
+  </Card>
+  <Card title="Metric, trace, log" icon="magnifier">
+    The metric says it is slow. The trace says which service. The log says why. One trace id ties them together.
+  </Card>
+  <Card title="Fix it and prove it" icon="approve-check">
+    Add the span the agents could not, apply the mitigation, watch the histogram recover.
+  </Card>
+</CardGrid>
+
+## Before you arrive
+
+Do this at home, on real wifi. It takes 5 to 15 minutes and needs Docker, kind and kubectl.
+
+```bash
+git clone https://github.com/iblancasa/otel-workshop.git && cd otel-workshop
+make prepare
+```
+
+<LinkCard title="Full preparation guide" href="/otel-workshop/prepare/" description="Requirements, what make prepare does, and the USB bundle for rooms with no wifi." />
+
+## The system
+
+```
+browser / loadgen
+      |
+      v
+ frontend (Node.js)  --->  orders (Python)  --->  inventory (Java)
+                             |     |
+                             |     '-->  payments (Python)
+                             '-->  "warehouse" (legacy client, simulated)
+
+ every service  --OTLP-->  OpenTelemetry Collector  --OTLP-->  otelite
+```
+
+Backend is [otelite](https://github.com/planetf1/otelite): a single binary that receives OTLP and shows logs, traces and metrics in one dashboard. Under 100 MB of memory, so every laptop in the room can run it.

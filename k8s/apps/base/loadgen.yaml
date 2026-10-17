@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen
+  namespace: shop
+  labels: { app: loadgen }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: loadgen }
+  template:
+    metadata:
+      labels: { app: loadgen }
+    spec:
+      containers:
+        - name: loadgen
+          image: workshop/loadgen:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: FRONTEND_URL, value: "http://frontend:3001" }
+            - { name: WORKERS, value: "3" }
+            - { name: EU_RATIO, value: "0.25" }
+          resources:
+            requests: { cpu: 20m, memory: 32Mi }
+            limits: { memory: 64Mi }

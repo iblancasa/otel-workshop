@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: shop
+  labels: { app: frontend, language: nodejs }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: frontend }
+  template:
+    metadata:
+      labels: { app: frontend, language: nodejs }
+    spec:
+      containers:
+        - name: frontend
+          image: workshop/frontend:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: ORDERS_URL, value: "http://orders:8000" }
+          ports:
+            - { containerPort: 3001 }
+          # tcpSocket, not httpGet: HTTP probes would create a trace every few seconds.
+          readinessProbe:
+            tcpSocket: { port: 3001 }
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: shop
+spec:
+  type: NodePort
+  selector: { app: frontend }
+  ports:
+    - { port: 3001, targetPort: 3001, nodePort: 30080 }

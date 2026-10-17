@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: shop
+spec:
+  template:
+    spec:
+      containers:
+        - name: inventory
+          env:
+            - { name: OTEL_SERVICE_NAME, value: "inventory" }
+            # Java: attach the agent at JVM start. No code change.
+            - name: JAVA_TOOL_OPTIONS
+              value: "-javaagent:/otel/opentelemetry-javaagent.jar"

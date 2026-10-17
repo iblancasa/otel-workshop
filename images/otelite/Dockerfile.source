@@ -1,0 +1,23 @@
+# Build otelite from a local source checkout (a fork or a branch not yet
+# released). Build context must be the otelite repository root:
+#
+#   make image-otelite OTELITE_SRC=../otelite
+#
+# Attendees pull ghcr.io/iblancasa/otelite:feat-service-graph instead, built from
+# the same source by the fork's GitHub Actions workflow. The Dockerfile next
+# to this one builds the upstream release binary (no Service Graph tab).
+FROM rust:1-bookworm AS build
+WORKDIR /src
+COPY . .
+RUN cargo build --release -p otelite --locked \
+    && install -m 0755 target/release/otelite /usr/local/bin/otelite
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /data
+COPY --from=build /usr/local/bin/otelite /usr/local/bin/otelite
+ENV OTELITE_DATA_DIR=/data
+EXPOSE 3000 4317 4318
+ENTRYPOINT ["otelite"]
+CMD ["serve", "--addr", "0.0.0.0:3000", "--storage-path", "/data"]

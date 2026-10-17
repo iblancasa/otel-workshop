@@ -1,0 +1,265 @@
+---
+/**
+ * A terminal transcript that plays once when it scrolls into view, then stays.
+ *
+ *   <Terminal src="instrument" title="make instrument" />
+ *
+ * `src` names a file in src/terminals/<src>.txt, produced from a recording by
+ * `make casts` (scripts/record-casts.sh + scripts/casts-to-text.py). Lines
+ * that start with a `$ ` prompt are typed; the rest streams in below them.
+ * No loop, no player chrome. Reduced-motion users and the "show all" button
+ * get the full transcript at once.
+ */
+interface Props {
+  src: string;
+  title?: string;
+  /** Max visible height before the body scrolls. */
+  maxHeight?: string;
+}
+
+const { src, title, maxHeight = '28rem' } = Astro.props;
+
+const files = import.meta.glob('../terminals/*.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const key = `../terminals/${src}.txt`;
+const raw = files[key];
+if (raw === undefined) {
+  throw new Error(`Terminal: no transcript "${src}". Known: ${Object.keys(files).map((k) => k.replace('../terminals/', '').replace('.txt', '')).join(', ')}`);
+}
+
+// Minimal ANSI SGR -> HTML. Enough for the prompt colour and the odd bold.
+const COLORS: Record<string, string> = {
+  '30': '#5c6370', '31': '#ef4444', '32': '#22c55e', '33': '#f59e0b', '34': '#60a5fa', '35': '#c084fc', '36': '#22d3ee', '37': '#e5e7eb',
+  '90': '#6b7280', '91': '#f87171', '92': '#4ade80', '93': '#fbbf24', '94': '#93c5fd', '95': '#d8b4fe', '96': '#67e8f9', '97': '#f9fafb',
+};
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+function ansiToHtml(line: string): string {
+  let out = '';
+  let open = 0;
+  let bold = false;
+  let color: string | null = null;
+  const parts = line.split(/(\x1b\[[0-9;]*m)/);
+  for (const p of parts) {
+    const m = p.match(/^\x1b\[([0-9;]*)m$/);
+    if (m) {
+      for (const code of (m[1] || '0').split(';')) {
+        if (code === '0' || code === '') { bold = false; color = null; }
+        else if (code === '1') bold = true;
+        else if (code === '22') bold = false;
+        else if (code === '39') color = null;
+        else if (COLORS[code]) color = COLORS[code];
+      }
+      if (open) { out += '</span>'; open = 0; }
+      if (bold || color) {
+        out += `<span style="${bold ? 'font-weight:700;' : ''}${color ? `color:${color};` : ''}">`;
+        open = 1;
+      }
+    } else {
+      out += esc(p);
+    }
+  }
+  if (open) out += '</span>';
+  return out;
+}
+
+const PROMPT = /^(?:\x1b\[[0-9;]*m)*\$(?:\x1b\[[0-9;]*m)* /;
+const stripAnsi = (l: string) => l.replace(/\x1b\[[0-9;]*m/g, '');
+const lines = raw.replace(/\n$/, '').split('\n').map((l) => ({
+  kind: PROMPT.test(l) ? 'cmd' : 'out',
+  html: ansiToHtml(l) || '&nbsp;',
+  text: PROMPT.test(l) ? stripAnsi(l).replace(/^\$ /, '') : '',
+}));
+const id = `term-${src.replace(/[^a-z0-9]+/gi, '-')}-${Math.random().toString(36).slice(2, 7)}`;
+---
+
+<figure class="term" id={id} data-term>
+  <div class="term-bar">
+    <span class="term-dots"><i></i><i></i><i></i></span>
+    <span class="term-title">{title ?? src}</span>
+    <button class="term-skip" type="button" data-skip aria-label="Show the whole output now">show all</button>
+  </div>
+  <pre class="term-body" style={`max-height:${maxHeight}`} tabindex="0"><code>{lines.map((l) => (
+    l.kind === 'cmd'
+      ? <span class="term-line term-cmd" data-cmd={l.text}><span class="term-cmd-text" set:html={l.html} /><button class="term-copy" type="button" data-copy aria-label="Copy command">copy</button></span>
+      : <span class="term-line term-out" set:html={l.html} />
+  ))}</code></pre>
+</figure>
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function play(fig: HTMLElement) {
+    if (fig.dataset.played) return;
+    fig.dataset.played = '1';
+    const lines = Array.from(fig.querySelectorAll<HTMLElement>('.term-line'));
+    const body = fig.querySelector<HTMLElement>('.term-body')!;
+    const skip = fig.querySelector<HTMLButtonElement>('[data-skip]');
+    let cancelled = false;
+
+    const finish = () => {
+      cancelled = true;
+      for (const l of lines) {
+        l.classList.add('is-shown');
+        l.classList.remove('is-typing');
+        const t = l.querySelector<HTMLElement>('.term-cmd-text');
+        if (t && t.dataset.full !== undefined) { t.innerHTML = t.dataset.full; delete t.dataset.full; }
+      }
+      fig.classList.add('is-done');
+      skip?.remove();
+    };
+    if (reduce) return finish();
+    skip?.addEventListener('click', finish);
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const scrollDown = () => { body.scrollTop = body.scrollHeight; };
+
+    (async () => {
+      for (const l of lines) {
+        if (cancelled) return;
+        if (l.classList.contains('term-cmd')) {
+          // type the command after the prompt, character by character
+          const target = l.querySelector<HTMLElement>('.term-cmd-text') || l;
+          const full = target.innerHTML;
+          const m = full.match(/^(.*?<\/span> |\$ )([\s\S]*)$/);
+          const prompt = m ? m[1] : '';
+          const rest = m ? m[2] : full;
+          target.dataset.full = full;
+          l.classList.add('is-shown', 'is-typing');
+          target.innerHTML = prompt;
+          // type by visible characters, skipping over HTML tags
+          const tokens = rest.match(/<[^>]+>|&[a-z#0-9]+;|[\s\S]/g) || [];
+          let typed = '';
+          for (const t of tokens) {
+            if (cancelled) return;
+            typed += t;
+            target.innerHTML = prompt + typed;
+            if (!t.startsWith('<')) await sleep(t === ' ' ? 40 : 18 + Math.random() * 22);
+          }
+          l.classList.remove('is-typing');
+          delete target.dataset.full;
+          await sleep(220);
+        } else {
+          l.classList.add('is-shown');
+          scrollDown();
+          await sleep(28 + Math.random() * 40);
+        }
+      }
+      fig.classList.add('is-done');
+      skip?.remove();
+    })();
+  }
+
+  function wireCopy() {
+    document.querySelectorAll<HTMLButtonElement>('[data-copy]:not([data-wired])').forEach((b) => {
+      b.dataset.wired = '1';
+      b.addEventListener('click', async () => {
+        const cmd = (b.closest('.term-cmd') as HTMLElement | null)?.dataset.cmd || '';
+        try { await navigator.clipboard.writeText(cmd); b.textContent = 'copied'; } catch { b.textContent = 'select it'; }
+        setTimeout(() => { b.textContent = 'copy'; }, 1500);
+      });
+    });
+  }
+
+  function arm() {
+    wireCopy();
+    const figs = document.querySelectorAll<HTMLElement>('[data-term]:not([data-armed])');
+    if (!figs.length) return;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { play(e.target as HTMLElement); io.unobserve(e.target); }
+      }
+    }, { threshold: 0.35 });
+    figs.forEach((f) => { f.dataset.armed = '1'; io.observe(f); });
+  }
+  arm();
+  document.addEventListener('astro:page-load', arm);
+</script>
+
+<style>
+  .term {
+    margin: 1.5rem 0;
+    border-radius: 0.6rem;
+    overflow: hidden;
+    background: #0f1117;
+    border: 1px solid #262a35;
+    box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
+    font-size: 0.8rem;
+  }
+  .term-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.45rem 0.8rem;
+    background: #171a23;
+    border-bottom: 1px solid #262a35;
+    color: #9aa3b2;
+    font-family: var(--__sl-font);
+    font-size: 0.75rem;
+  }
+  .term-dots { display: inline-flex; gap: 0.35rem; }
+  .term-dots i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #3a3f4d; display: inline-block; }
+  .term-dots i:nth-child(1) { background: #ff5f57; }
+  .term-dots i:nth-child(2) { background: #febc2e; }
+  .term-dots i:nth-child(3) { background: #28c840; }
+  .term-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .term-skip {
+    background: transparent; border: 1px solid #3a3f4d; color: #9aa3b2;
+    border-radius: 0.3rem; padding: 0.1rem 0.5rem; font-size: 0.7rem; cursor: pointer;
+  }
+  .term-skip:hover { color: #e5e7eb; border-color: #6b7280; }
+  .term-body {
+    margin: 0;
+    padding: 0.8rem 1rem 1rem;
+    overflow: auto;
+    color: #d7dce5;
+    background: #0f1117;
+    font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    line-height: 1.5;
+    tab-size: 4;
+  }
+  .term-body code { font: inherit; background: none; padding: 0; }
+  .term-line { display: none; white-space: pre; }
+  .term-line.is-shown { display: block; }
+  .term-out { color: #aeb6c4; }
+  /* Commands: their own band, wrap instead of scroll, hanging indent, copy button. */
+  .term-cmd {
+    position: relative;
+    display: none;
+    margin: 0.55rem -1rem 0.35rem;
+    padding: 0.35rem 4.2rem 0.35rem 1rem;
+    background: #1b2030;
+    border-left: 3px solid #22c55e;
+    color: #f9fafb;
+    font-weight: 500;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    text-indent: -1.1rem;
+    padding-left: 2.1rem;
+  }
+  .term-cmd.is-shown { display: block; }
+  .term-cmd:first-child { margin-top: -0.2rem; }
+  .term-cmd-text { white-space: pre-wrap; }
+  .term-copy {
+    position: absolute; right: 0.6rem; top: 0.3rem;
+    text-indent: 0;
+    background: #262c3d; color: #c7cdd8; border: 1px solid #3a4154;
+    border-radius: 0.3rem; padding: 0.05rem 0.45rem; font-size: 0.68rem; font-family: var(--__sl-font);
+    cursor: pointer; opacity: 0; transition: opacity 0.15s;
+  }
+  .term-cmd:hover .term-copy, .term-copy:focus { opacity: 1; }
+  .term-cmd.is-typing .term-copy { display: none; }
+  .term-cmd.is-typing .term-cmd-text::after {
+    content: '';
+    display: inline-block;
+    width: 0.55em; height: 1.1em;
+    margin-left: 1px;
+    vertical-align: -0.2em;
+    background: #d7dce5;
+    animation: term-blink 1s steps(1) infinite;
+  }
+  @keyframes term-blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .term-line, .term-cmd { display: block; }
+    .term-skip { display: none; }
+  }
+</style>

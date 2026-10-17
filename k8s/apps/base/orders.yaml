@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders
+  namespace: shop
+  labels: { app: orders, language: python }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: orders }
+  template:
+    metadata:
+      labels: { app: orders, language: python }
+    spec:
+      containers:
+        - name: orders
+          image: workshop/orders:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: INVENTORY_URL, value: "http://inventory:8081" }
+            - { name: PAYMENTS_URL, value: "http://payments:8002" }
+            # Warehouse client settings, inherited from the EU migration.
+            - { name: WAREHOUSE_EU_ENDPOINT, value: "warehouse-eu.internal:9000" }
+            - { name: WAREHOUSE_TIMEOUT_MS, value: "2500" }
+            - { name: WAREHOUSE_RETRIES, value: "3" }
+          ports:
+            - { containerPort: 8000 }
+          # tcpSocket, not httpGet: HTTP probes would create a trace every few seconds.
+          readinessProbe:
+            tcpSocket: { port: 8000 }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders
+  namespace: shop
+spec:
+  selector: { app: orders }
+  ports:
+    - { port: 8000, targetPort: 8000 }

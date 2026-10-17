@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: shop
+  labels: { app: inventory, language: java }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inventory }
+  template:
+    metadata:
+      labels: { app: inventory, language: java }
+    spec:
+      containers:
+        - name: inventory
+          image: workshop/inventory:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PORT, value: "8081" }
+          ports:
+            - { containerPort: 8081 }
+          # tcpSocket, not httpGet: HTTP probes would create a trace every few seconds.
+          readinessProbe:
+            tcpSocket: { port: 8081 }
+            initialDelaySeconds: 3
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+  namespace: shop
+spec:
+  selector: { app: inventory }
+  ports:
+    - { port: 8081, targetPort: 8081 }

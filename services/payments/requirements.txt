@@ -1,0 +1,8 @@
+fastapi==0.115.14
+uvicorn==0.54.0
+
+# OpenTelemetry, inert until the deployment enables it (see k8s/apps/instrumented).
+opentelemetry-distro==0.66b0
+opentelemetry-exporter-otlp==1.45.0
+opentelemetry-instrumentation-fastapi==0.66b0
+opentelemetry-instrumentation-logging==0.66b0

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Workshop Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --muted:#6a737d; --accent:#2563eb; --ok:#16a34a; --slow:#dc2626; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+    main { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-weight: 600; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:16px; }
+    .card { background:var(--card); border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    .sku { color:var(--muted); font-size:12px; font-family: monospace; }
+    button { margin-top:12px; width:100%; padding:10px; border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:15px; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:wait; }
+    .result { margin-top:8px; font-size:13px; min-height: 18px; }
+    .ok { color:var(--ok); } .slow { color:var(--slow); }
+    #log { margin-top:24px; font-family: monospace; font-size:12px; color:var(--muted); white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Workshop Shop</h1>
+  <p>Click <b>Buy</b>. Some of these take a while. Nobody knows why.</p>
+  <div class="grid" id="products"></div>
+  <div id="log"></div>
+</main>
+<script>
+  const grid = document.getElementById("products");
+  const logEl = document.getElementById("log");
+  fetch("/api/products").then(r => r.json()).then(products => {
+    for (const p of products) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `<div><b>${p.name}</b></div><div class="sku">${p.sku}</div><div>$${p.price}</div>
+        <button>Buy</button><div class="result"></div>`;
+      const btn = card.querySelector("button");
+      const result = card.querySelector(".result");
+      btn.onclick = async () => {
+        btn.disabled = true; result.textContent = "Processing..."; result.className = "result";
+        const t0 = performance.now();
+        const timer = setInterval(() => { result.textContent = `Processing... ${((performance.now()-t0)/1000).toFixed(1)}s`; }, 100);
+        try {
+          const r = await fetch("/api/checkout", { method: "POST", headers: {"content-type":"application/json"}, body: JSON.stringify({ sku: p.sku, qty: 1 }) });
+          const body = await r.json();
+          clearInterval(timer);
+          const ms = Math.round(performance.now() - t0);
+          result.className = "result " + (ms > 2000 ? "slow" : "ok");
+          result.textContent = r.ok ? `Order ${body.order_id} in ${ms} ms` : `Error ${r.status} after ${ms} ms`;
+          logEl.textContent = `${new Date().toLocaleTimeString()} ${p.sku} -> ${r.status} in ${ms} ms\n` + logEl.textContent;
+        } catch (e) {
+          clearInterval(timer); result.className = "result slow"; result.textContent = "Request failed";
+        } finally { btn.disabled = false; }
+      };
+      grid.appendChild(card);
+    }
+  });
+</script>
+</body>
+</html>

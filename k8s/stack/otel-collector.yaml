@@ -1,0 +1,142 @@
+# OpenTelemetry Collector. Applications send OTLP here; the collector
+# batches and forwards to otelite. In production this is where you would
+# add sampling, redaction, routing to several backends, etc.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: observability
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        timeout: 1s
+      # otelite keeps ONE "latest" data point per metric NAME, across all
+      # services. Three services exporting http.server.request.duration would
+      # overwrite each other every 5 s. We suffix the name with the service so
+      # each one is visible on its own. This is the kind of backend-specific
+      # massaging a Collector is for; apps know nothing about it.
+      # Same otelite limitation, second half: within one metric name the
+      # "latest" row is one attribute set. Keep only the routes we care about
+      # so the headline number is always the checkout path.
+      filter/otelite-routes:
+        metrics:
+          datapoint:
+            - 'IsMatch(metric.name, "^http\\.server\\.request\\.duration") and not IsMatch(attributes["http.route"], "^/(api/checkout|orders|stock/|charge)$")'
+      # otelite's span panel shows span attributes only, never the resource.
+      # Copy the two resource attributes you always want to see onto each span.
+      transform/otelite-span-service:
+        trace_statements:
+          - context: span
+            statements:
+              - set(attributes["service.name"], resource.attributes["service.name"])
+              - set(attributes["k8s.pod.name"], resource.attributes["k8s.pod.name"])
+      transform/otelite-metric-names:
+        metric_statements:
+          - context: metric
+            statements:
+              - set(name, Concat([name, resource.attributes["service.name"]], ".")) where name == "http.server.request.duration" or name == "http.client.request.duration"
+
+    # A connector is both an exporter (end of one pipeline) and a receiver
+    # (start of another). service_graph pairs client/server spans from the
+    # traces pipeline and emits request/latency/error metrics per edge:
+    #   traces_service_graph_request_total{client, server, connection_type}
+    #   traces_service_graph_request_failed_total{...}
+    #   traces_service_graph_request_server{...}  (histogram, seconds)
+    #   traces_service_graph_request_client{...}  (histogram, seconds)
+    # otelite's "Service Graph" tab is drawn from these.
+    connectors:
+      service_graph:
+        metrics_flush_interval: 10s
+        store:
+          ttl: 10s
+          max_items: 5000
+        latency_histogram_buckets: [10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s]
+        # When a client span never meets its server span (the callee was down,
+        # or is not instrumented), name the virtual node after these attributes
+        # instead of "unknown". server.address covers plain HTTP calls.
+        virtual_node_peer_attributes: [peer.service, server.address, net.peer.name, db.name, db.system]
+
+    exporters:
+      otlp/otelite:
+        endpoint: otelite.observability.svc.cluster.local:4317
+        tls:
+          insecure: true
+        # otelite's gRPC receiver does not accept gzip (the collector default).
+        compression: none
+      # Uncomment to print every signal to the collector's stdout.
+      # Handy when you ask "is anything arriving at all?".
+      debug:
+        verbosity: basic
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [transform/otelite-span-service, batch]
+          exporters: [otlp/otelite, service_graph]
+        # Metrics produced by the connector. No filter/transform here: the
+        # servicegraph metric names are unique per (client, server) pair
+        # and otelite's /api/servicegraph reads every sample in the window.
+        metrics/service_graph:
+          receivers: [service_graph]
+          processors: [batch]
+          exporters: [otlp/otelite]
+        metrics:
+          receivers: [otlp]
+          processors: [filter/otelite-routes, transform/otelite-metric-names, batch]
+          exporters: [otlp/otelite]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/otelite]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: otel-collector }
+  template:
+    metadata:
+      labels: { app: otel-collector }
+    spec:
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.161.0
+          imagePullPolicy: IfNotPresent
+          args: ["--config=/conf/config.yaml"]
+          ports:
+            - { name: otlp-grpc, containerPort: 4317 }
+            - { name: otlp-http, containerPort: 4318 }
+          volumeMounts:
+            - { name: config, mountPath: /conf }
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: observability
+spec:
+  selector: { app: otel-collector }
+  ports:
+    - { name: otlp-grpc, port: 4317, targetPort: 4317 }
+    - { name: otlp-http, port: 4318, targetPort: 4318 }

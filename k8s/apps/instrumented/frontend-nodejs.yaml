@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: shop
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          env:
+            - { name: OTEL_SERVICE_NAME, value: "frontend" }
+            # Node.js: preload the auto-instrumentation. No code change.
+            - name: NODE_OPTIONS
+              value: "--require @opentelemetry/auto-instrumentations-node/register"
+            - { name: OTEL_NODE_RESOURCE_DETECTORS, value: "env,host,os,process" }

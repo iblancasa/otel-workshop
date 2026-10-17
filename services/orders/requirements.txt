@@ -1,0 +1,14 @@
+# fastapi >= 0.14x ships its own built-in OpenTelemetry integration which
+# double-registers exporters next to the OTel auto-instrumentation. We pin the
+# 0.115 line so the only instrumentation is the one we switch on with env vars.
+fastapi==0.115.14
+uvicorn==0.54.0
+httpx==0.28.1
+
+# OpenTelemetry. Installed in the image, but INERT until the deployment
+# enables it through environment variables (see k8s/apps/instrumented).
+opentelemetry-distro==0.66b0
+opentelemetry-exporter-otlp==1.45.0
+opentelemetry-instrumentation-fastapi==0.66b0
+opentelemetry-instrumentation-httpx==0.66b0
+opentelemetry-instrumentation-logging==0.66b0

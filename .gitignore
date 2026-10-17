@@ -1,0 +1,10 @@
+bundle/
+*.tar
+*.tar.gz
+node_modules/
+__pycache__/
+*.class
+services/inventory/out/
+.DS_Store
+site/dist/
+site/.astro/

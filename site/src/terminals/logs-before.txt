@@ -1,0 +1,18 @@
+[1;32m$[0m kubectl -n shop logs deploy/frontend --tail=4
+Found 2 pods, using pod/frontend-5c55dc5c5b-sb99b
+{"level":"warn","message":"checkout was slow","ms":7951,"sku":"EU-HOODIE-03","span_id":"303414a0bf296a4f","timestamp":"2026-10-15T11:32:07.583Z","trace_flags":"01","trace_id":"9f2cd679bd4f1896f41b79ac5efdf02f"}
+{"level":"info","message":"checkout completed","ms":7951,"orderId":"b820f1e6","sku":"EU-HOODIE-03","span_id":"303414a0bf296a4f","timestamp":"2026-10-15T11:32:07.583Z","trace_flags":"01","trace_id":"9f2cd679bd4f1896f41b79ac5efdf02f"}
+{"level":"warn","message":"checkout was slow","ms":7953,"sku":"EU-HOODIE-03","span_id":"94a2e5203c44e04e","timestamp":"2026-10-15T11:32:07.942Z","trace_flags":"01","trace_id":"088dbeb2af49e4e91c9efd763dca2f1c"}
+{"level":"info","message":"checkout completed","ms":7953,"orderId":"7aa12c8b","sku":"EU-HOODIE-03","span_id":"94a2e5203c44e04e","timestamp":"2026-10-15T11:32:07.942Z","trace_flags":"01","trace_id":"088dbeb2af49e4e91c9efd763dca2f1c"}
+[1;32m$[0m kubectl -n shop logs deploy/orders --tail=6
+2026-10-15 11:32:29,026 INFO orders: order 3599e037 confirmed sku=US-TSHIRT-01 region=us-east mode=primary
+2026-10-15 11:32:29,351 INFO orders: new order request sku=US-TSHIRT-01 qty=1
+2026-10-15 11:32:29,355 INFO httpx: HTTP Request: GET http://inventory:8081/stock/US-TSHIRT-01 "HTTP/1.1 200 OK"
+2026-10-15 11:32:29,376 INFO orders.warehouse: reserved US-TSHIRT-01 x1 at us-east (attempt 1)
+2026-10-15 11:32:29,409 INFO httpx: HTTP Request: POST http://payments:8002/charge "HTTP/1.1 200 OK"
+2026-10-15 11:32:29,410 INFO orders: order 9cee1bb7 confirmed sku=US-TSHIRT-01 region=us-east mode=primary
+[1;32m$[0m kubectl -n shop logs deploy/inventory --tail=4
+Oct 15, 2026 11:32:18 AM Inventory handleStock
+INFO: cache miss for sku=US-MUG-02, querying stock table
+Oct 15, 2026 11:32:19 AM Inventory handleStock
+INFO: cache miss for sku=EU-HOODIE-03, querying stock table

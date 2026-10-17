@@ -1,0 +1,124 @@
+---
+title: "Step 1: the observability stack"
+description: What make prepare deployed in the observability namespace, and why there are two things rather than one.
+sidebar:
+  label: 1. The stack
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Goal:** understand the two boxes in the `observability` namespace before
+you send anything to them.
+
+```
+                       OTLP/HTTP :4318                 OTLP/gRPC :4317
+ frontend ─┐
+ orders   ─┼──────────► otel-collector ──────────────► otelite ──► http://localhost:3000
+ inventory ┘            (receive, batch, forward)       (store + dashboard)
+```
+
+## otelite
+
+[otelite](https://github.com/planetf1/otelite) is a single Rust binary. It
+listens for OTLP on 4317 (gRPC) and 4318 (HTTP), stores everything in
+SQLite, and serves a dashboard on 3000. Logs, traces and metrics in one
+place, under 100 MB of memory. That is why every laptop in the room can run
+it.
+
+There is no official container image. The workshop runs
+`ghcr.io/iblancasa/otelite:feat-service-graph`, built from a
+[fork](https://github.com/iblancasa/otelite/tree/feat/service-graph) that adds
+a Service Graph tab (step 6, proposed upstream). The Dockerfiles are in
+[images/otelite/](https://github.com/iblancasa/otel-workshop/tree/main/images/otelite).
+
+```bash
+kubectl -n observability logs deploy/otelite
+```
+
+In production you would put Jaeger, Tempo, Grafana, Honeycomb, Datadog or any
+other OTLP-compatible backend in this box. Nothing else in the workshop
+changes.
+
+## OpenTelemetry Collector
+
+The services do not talk to otelite directly. They send to the Collector,
+and the Collector forwards to otelite. The config is in
+[k8s/stack/otel-collector.yaml](https://github.com/iblancasa/otel-workshop/blob/main/k8s/stack/otel-collector.yaml):
+
+```yaml title="otel-collector.yaml (abridged)"
+receivers:
+  otlp:                              # accept OTLP on 4317 and 4318
+processors:
+  batch:                             # group signals before sending
+  transform/otelite-span-service:    # copy service.name and k8s.pod.name from the
+    ...                              #   resource onto every span (otelite only shows span attrs)
+  filter/otelite-routes:             # drop http.server.request.duration points for
+    ...                              #   routes nobody will look at (static files, /api/products)
+  transform/otelite-metric-names:    # rename http.server.request.duration ->
+    ...                              #   http.server.request.duration.<service.name>
+connectors:
+  service_graph:                     # pairs client/server spans -> per-edge metrics (step 6)
+exporters:
+  otlp/otelite:                      # forward to otelite
+    endpoint: otelite.observability.svc.cluster.local:4317
+    compression: none                # otelite does not accept gzip
+  debug:                             # print to stdout (not in a pipeline right now)
+service:
+  pipelines:
+    traces:  { receivers: [otlp], processors: [transform/otelite-span-service, batch], exporters: [otlp/otelite, service_graph] }
+    metrics: { receivers: [otlp], processors: [filter/otelite-routes, transform/otelite-metric-names, batch], exporters: [otlp/otelite] }
+    metrics/service_graph: { receivers: [service_graph], processors: [batch], exporters: [otlp/otelite] }
+    logs:    { receivers: [otlp], processors: [batch], exporters: [otlp/otelite] }
+```
+
+### The components, with their docs
+
+| Component | Kind | Distribution | What it does here |
+|-----------|------|--------------|-------------------|
+| [`otlp` receiver](https://github.com/open-telemetry/opentelemetry-collector/tree/main/receiver/otlpreceiver) | receiver | core | Accepts OTLP over gRPC (4317) and HTTP (4318) from the apps |
+| [`batch` processor](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor) | processor | core | Groups signals before export, 1 s timeout |
+| [`transform` processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor) | processor | contrib | Copies `service.name` onto spans, renames the duration metrics per service. Statements are written in [OTTL](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl) |
+| [`filter` processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor) | processor | contrib | Drops duration samples for routes nobody looks at |
+| [`service_graph` connector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/servicegraphconnector) | connector | contrib | Pairs client/server spans into per-edge metrics ([step 6](/otel-workshop/steps/06-service-graph/)) |
+| [`otlp` exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlpexporter) | exporter | core | Sends everything to otelite over gRPC, `compression: none` |
+| [`debug` exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/debugexporter) | exporter | core | Prints signals to stdout, for "is anything arriving?" |
+
+Core components ship in every Collector build. Contrib ones need the
+`otel/opentelemetry-collector-contrib` image, which is why the workshop uses
+it. The concepts page on
+[opentelemetry.io](https://opentelemetry.io/docs/collector/configuration/)
+explains receivers, processors, exporters, connectors and pipelines in one
+read.
+
+### Why a hop in the middle?
+
+- Applications know one address. Change the backend, add a second one, add
+  sampling: the apps never restart.
+- The Collector batches, retries, adds Kubernetes metadata, drops health-check
+  spans, redacts attributes, converts between protocols.
+- It absorbs load. If otelite is down, the Collector queues for a while.
+- It papers over backend quirks. The three `transform` and `filter`
+  processors above exist only because of otelite: its span panel does not
+  show resource attributes (so we copy `service.name` and `k8s.pod.name` onto
+  each span), and it keeps one "latest" data point per metric *name* across
+  all services (so we rename `http.server.request.duration` per service and
+  drop the boring routes). The applications know nothing about any of this.
+  Swap otelite for Tempo and you delete those three blocks.
+
+<Aside type="tip" title="Try it">
+Add `debug` to the `exporters` list of the `logs` pipeline, apply the file,
+and watch the Collector print every log record it receives. Remember to put
+it back, it is noisy.
+
+```bash
+kubectl apply -f k8s/stack/otel-collector.yaml
+kubectl -n observability rollout restart deploy/otel-collector
+make collector-logs
+```
+</Aside>
+
+## Is anything arriving?
+
+Not yet. [http://localhost:3000](http://localhost:3000) is still empty and
+the Collector logs show no errors, because nobody sends anything. Next: make
+the three services talk.

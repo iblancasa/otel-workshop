@@ -1,0 +1,14 @@
+:root {
+  --sl-content-width: 50rem;
+}
+
+/* Step pages: the "what you should see" callouts */
+.sl-markdown-content .expressive-code {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Tables a bit tighter */
+.sl-markdown-content table {
+  font-size: var(--sl-text-sm);
+}

@@ -1,0 +1,11 @@
+---
+/**
+ * Starlight Sidebar override: the flavour switch, then the default sidebar
+ * (already filtered to the current flavour by src/routeData.ts).
+ */
+import Default from '@astrojs/starlight/components/Sidebar.astro';
+import FlavourSwitch from './FlavourSwitch.astro';
+---
+
+<FlavourSwitch />
+<Default><slot /></Default>

@@ -1,0 +1,4 @@
+{"version":2,"width":100,"height":24,"timestamp":1792254875,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.6CKuUkGuWN","env":{"SHELL":"/bin/zsh"}}
+[0.024894, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/orders --tail=30 | grep -E 'WARNING|ERROR' | tail -3 | cut -c1-180\r\n"]
+[0.064633, "o", "2026-10-17 16:34:34,264 WARNING [orders.warehouse] [warehouse.py:84] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=\r\n2026-10-17 16:34:34,264 ERROR [orders.warehouse] [warehouse.py:91] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=Tr\r\n"]
+[0.874762, "x", "0"]

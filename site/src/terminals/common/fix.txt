@@ -1,0 +1,9 @@
+[1;32m$[0m make fix
+kubectl --context kind-otel-workshop-cncf -n shop set env deploy/orders WAREHOUSE_TIMEOUT_MS=250 WAREHOUSE_RETRIES=1
+deployment.apps/orders env updated
+kubectl --context kind-otel-workshop-cncf -n shop rollout status deploy/orders --timeout=120s
+Waiting for deployment "orders" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "orders" rollout to finish: 1 old replicas are pending termination...
+deployment "orders" successfully rolled out
+[1;32m$[0m curl -s -w ' -> %{time_total}s\n' -X POST localhost:8080/api/checkout -H 'content-type: application/json' -d '{"sku":"EU-HOODIE-03","qty":1}'
+{"order_id":"3f305683","sku":"EU-HOODIE-03","qty":1,"warehouse":{"region":"eu-west","mode":"fallback"},"payment":{"payment_id":"089586fd","amount":55},"elapsed_ms":695} -> 0.697249s

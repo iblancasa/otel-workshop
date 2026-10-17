@@ -1,9 +1,0 @@
-{"version":2,"width":100,"height":24,"timestamp":1792064011,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.Nj7z9wdgsi","env":{"SHELL":"/bin/zsh"}}
-[0.029931, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/orders --tail=5 | cut -c1-160\r\n"]
-[0.18615, "o", "2026-10-15 11:33:30,455 WARNING [orders.warehouse] [warehouse.py:72] [trace_id=9a7eb1792469d944fa31ee88b9bdfecf span_id=088213ff1c00af12 resource.service.name=o\r\n2026-10-15 11:33:30,456 ERROR [orders.warehouse] [warehouse.py:79] [trace_id=9a7eb1792469d944fa31ee88b9bdfecf span_id=088213ff1c00af12 resource.service.name=ord\r\n2026-10-15 11:33:30,500 WARNING [orders.warehouse] [warehouse.py:72] [trace_id=5c626007e8a0edabe81000b9922ea525 span_id=aa7fd5990f19cf9c resource.service.name=o\r\n2026-10-15 11:33:30,896 INFO [httpx] [_client.py:1025] [trace_id=9a7eb1792469d944fa31ee88b9bdfecf span_id=088213ff1c00af12 resource.service.name=orders trace_sa\r\n"]
-[0.186161, "o", "2026-10-15 11:33:30,896 INFO [orders] [app.py:55] [trace_id=9a7eb1792469d944fa31ee88b9bdfecf span_id=088213ff1c00af12 resource.service.name=orders trace_sampled\r\n"]
-[0.993568, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/frontend --tail=2 | cut -c1-200\r\n"]
-[1.048148, "o", "{\"level\":\"info\",\"message\":\"checkout started\",\"qty\":2,\"sku\":\"US-TSHIRT-01\",\"span_id\":\"d5b029cb54d8efc9\",\"timestamp\":\"2026-10-15T11:33:31.729Z\",\"trace_flags\":\"01\",\"trace_id\":\"7bb0a6c6fe5facdf90e59a2a451\r\n{\"level\":\"info\",\"message\":\"checkout completed\",\"ms\":77,\"orderId\":\"7933d110\",\"sku\":\"US-TSHIRT-01\",\"span_id\":\"d5b029cb54d8efc9\",\"timestamp\":\"2026-10-15T11:33:31.806Z\",\"trace_flags\":\"01\",\"trace_id\":\"7bb0\r\n"]
-[1.856294, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/inventory | grep -m1 javaagent\r\n"]
-[1.907381, "o", "Picked up JAVA_TOOL_OPTIONS: -javaagent:/otel/opentelemetry-javaagent.jar\r\n"]
-[2.715764, "x", "0"]

@@ -1,0 +1,31 @@
+[1;32m$[0m curl -s 'localhost:9090/api/v1/label/__name__/values' | python3 scripts/api-helpers.py names http_
+833 metric names in total, 13 starting with 'http_'
+  http_client_request_duration_seconds_bucket
+  http_client_request_duration_seconds_count
+  http_client_request_duration_seconds_sum
+  http_server_active_requests
+  http_server_request_body_size_bytes_bucket
+  http_server_request_body_size_bytes_count
+  http_server_request_body_size_bytes_sum
+  http_server_request_duration_seconds_bucket
+  http_server_request_duration_seconds_count
+  http_server_request_duration_seconds_sum
+  http_server_response_body_size_bytes_bucket
+  http_server_response_body_size_bytes_count
+  http_server_response_body_size_bytes_sum
+[1;32m$[0m curl -s 'localhost:9090/api/v1/query' --data-urlencode 'query=sum by (le) (http_server_request_duration_seconds_bucket{service_name="frontend",http_route="/api/checkout"})' | python3 scripts/api-helpers.py buckets
+le= 0.005       0
+le=  0.01       0
+le= 0.025       0
+le=  0.05       0
+le= 0.075      34
+le=   0.1      38
+le=  0.25      40
+le=   0.5      40
+le=  0.75      40
+le=     1      40
+le=   2.5      40
+le=     5      40
+le=   7.5      41
+le=    10      59
+le=  +Inf      59

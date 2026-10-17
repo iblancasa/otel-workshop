@@ -1,0 +1,17 @@
+[1;32m$[0m kubectl -n shop logs deploy/frontend --tail=4
+{"level":"warn","message":"checkout was slow","ms":7951,"sku":"EU-HOODIE-03","timestamp":"2026-10-17T16:32:29.553Z"}
+{"level":"info","message":"checkout completed","ms":7951,"orderId":"ce722fee","sku":"EU-HOODIE-03","timestamp":"2026-10-17T16:32:29.553Z"}
+{"level":"info","message":"checkout started","qty":2,"sku":"US-MUG-02","timestamp":"2026-10-17T16:32:29.907Z"}
+{"level":"info","message":"checkout completed","ms":59,"orderId":"afc4ab48","sku":"US-MUG-02","timestamp":"2026-10-17T16:32:29.966Z"}
+[1;32m$[0m kubectl -n shop logs deploy/orders --tail=6
+2026-10-17 16:32:30,656 INFO httpx: HTTP Request: GET http://inventory:8081/stock/EU-POSTER-04 "HTTP/1.1 200 OK"
+2026-10-17 16:32:30,754 INFO orders: new order request sku=US-MUG-02 qty=3
+2026-10-17 16:32:30,759 INFO httpx: HTTP Request: GET http://inventory:8081/stock/US-MUG-02 "HTTP/1.1 200 OK"
+2026-10-17 16:32:30,781 INFO orders.warehouse: reserved US-MUG-02 x3 at us-east (attempt 1)
+2026-10-17 16:32:30,813 INFO httpx: HTTP Request: POST http://payments:8002/charge "HTTP/1.1 200 OK"
+2026-10-17 16:32:30,813 INFO orders: order 425d7a6a confirmed sku=US-MUG-02 region=us-east mode=primary
+[1;32m$[0m kubectl -n shop logs deploy/inventory --tail=4
+Oct 17, 2026 4:30:52 PM Inventory handleStock
+INFO: cache miss for sku=US-MUG-02, querying stock table
+Oct 17, 2026 4:30:53 PM Inventory handleStock
+INFO: cache miss for sku=EU-POSTER-04, querying stock table

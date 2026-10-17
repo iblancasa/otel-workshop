@@ -1,0 +1,46 @@
+# Prometheus 3. Two ways data gets in:
+#   1. Pushed over OTLP by the Collector (--web.enable-otlp-receiver on the
+#      command line, the otlp: section below says how to translate it).
+#   2. Scraped from the stack's own /metrics endpoints, the classic way.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+otlp:
+  # How OTLP names become Prometheus names. The default: dots to
+  # underscores, unit and type suffixes appended.
+  #   http.server.request.duration (s, histogram) -> http_server_request_duration_seconds_bucket
+  #   traces.span.metrics.calls (counter)          -> traces_span_metrics_calls_total
+  #   jvm.cpu.recent_utilization (1, gauge)        -> jvm_cpu_recent_utilization_ratio
+  translation_strategy: UnderscoreEscapingWithSuffixes
+  # OTel resource attributes are not labels by default; they go to a
+  # separate target_info series. Promote the ones you filter by.
+  promote_resource_attributes:
+    - service.name
+    - service.namespace
+    - service.instance.id
+    - deployment.environment
+    - k8s.pod.name
+  keep_identifying_resource_attributes: true
+
+storage:
+  tsdb:
+    # Several SDKs push on their own clocks; let samples arrive a bit late.
+    out_of_order_time_window: 30m
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: otel-collector
+    static_configs:
+      - targets: ['otel-collector:8888']
+  - job_name: jaeger
+    static_configs:
+      - targets: ['jaeger:8888']
+  - job_name: loki
+    static_configs:
+      - targets: ['loki:3100']
+  - job_name: perses
+    static_configs:
+      - targets: ['perses:8080']

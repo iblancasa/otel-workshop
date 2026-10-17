@@ -1,0 +1,13 @@
+# Perses server configuration. Resources (project, datasources, dashboard)
+# are provisioned from files at startup and re-applied every hour, so the
+# dashboard survives any edit you make in the UI only until then. Export
+# yours with `percli get dashboard -p workshop -o yaml` if you want to keep it.
+database:
+  file:
+    folder: /perses
+    extension: json
+
+provisioning:
+  folders:
+    - /etc/perses/provisioning
+  interval: 1h

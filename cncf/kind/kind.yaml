@@ -1,0 +1,28 @@
+# kind cluster for the CNCF flavour of the workshop.
+# Host ports:
+#   8080  -> frontend shop   (NodePort 30080)
+#   3000  -> Perses          (NodePort 30000)  dashboards, log and trace explorer
+#   16686 -> Jaeger UI       (NodePort 30686)  traces, Monitor, System Architecture
+#   9090  -> Prometheus      (NodePort 30090)  PromQL
+#   3100  -> Loki API        (NodePort 30100)  LogQL over HTTP, logcli
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: otel-workshop-cncf
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 30000
+        hostPort: 3000
+        protocol: TCP
+      - containerPort: 30686
+        hostPort: 16686
+        protocol: TCP
+      - containerPort: 30090
+        hostPort: 9090
+        protocol: TCP
+      - containerPort: 30100
+        hostPort: 3100
+        protocol: TCP

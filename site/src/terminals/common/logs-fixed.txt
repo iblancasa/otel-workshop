@@ -1,0 +1,3 @@
+[1;32m$[0m kubectl -n shop logs deploy/orders --tail=30 | grep -E 'WARNING|ERROR' | tail -3 | cut -c1-180
+2026-10-17 16:34:34,264 WARNING [orders.warehouse] [warehouse.py:84] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=
+2026-10-17 16:34:34,264 ERROR [orders.warehouse] [warehouse.py:91] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=Tr

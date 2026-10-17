@@ -1,0 +1,391 @@
+# The workshop dashboard, one row per question: is it slow (metrics), where
+# (traces turned into metrics), why (logs). Provisioned into the "workshop"
+# project. Edit it in the UI, then export with:
+#   percli get dashboard slow-api -p workshop -o yaml
+kind: Dashboard
+metadata:
+  name: slow-api
+  project: workshop
+spec:
+  display:
+    name: The mystery of the slow API
+    description: Metric says it is slow, traces say where, logs say why.
+  duration: 15m
+  refreshInterval: 10s
+
+  panels:
+    # ---------------------------------------------------------------- metrics
+    checkoutRate:
+      kind: Panel
+      spec:
+        display:
+          name: Checkouts per second
+          description: http.server.request.duration count on the frontend, route /api/checkout
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last
+            format:
+              unit: requests/sec
+              decimalPlaces: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum(rate(http_server_request_duration_seconds_count{service_name="frontend", http_route="/api/checkout"}[1m]))
+    checkoutP95:
+      kind: Panel
+      spec:
+        display:
+          name: Checkout p95
+          description: 95th percentile of the frontend's /api/checkout duration over the last minute
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last
+            format:
+              unit: seconds
+              decimalPlaces: 2
+            thresholds:
+              steps:
+                - value: 1
+                  color: "#f59e0b"
+                - value: 5
+                  color: "#ef4444"
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name="frontend", http_route="/api/checkout"}[1m])))
+    slowShare:
+      kind: Panel
+      spec:
+        display:
+          name: Checkouts slower than 5 s
+          description: Share of /api/checkout requests above the 5 s bucket, last 5 minutes
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: last
+            format:
+              unit: percent
+              decimalPlaces: 1
+            thresholds:
+              steps:
+                - value: 5
+                  color: "#ef4444"
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: 100 * (sum(rate(http_server_request_duration_seconds_count{service_name="frontend", http_route="/api/checkout"}[5m])) - sum(rate(http_server_request_duration_seconds_bucket{service_name="frontend", http_route="/api/checkout", le="5"}[5m]))) / sum(rate(http_server_request_duration_seconds_count{service_name="frontend", http_route="/api/checkout"}[5m]))
+    checkoutQuantiles:
+      kind: Panel
+      spec:
+        display:
+          name: Checkout latency, p50 / p95 / p99
+          description: The mean hides it. The percentiles show one in four requests at 8 s.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: bottom
+            yAxis:
+              format:
+                unit: seconds
+                decimalPlaces: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name="frontend", http_route="/api/checkout"}[1m])))
+                  seriesNameFormat: p50
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name="frontend", http_route="/api/checkout"}[1m])))
+                  seriesNameFormat: p95
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name="frontend", http_route="/api/checkout"}[1m])))
+                  seriesNameFormat: p99
+    fastSlow:
+      kind: Panel
+      spec:
+        display:
+          name: Fast (under 1 s) vs slow (over 5 s) checkouts
+          description: Bimodal. Nothing in between. Not a saturated resource, a fixed cost that is paid or not.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: bottom
+            visual:
+              display: bar
+              stack: all
+            yAxis:
+              format:
+                unit: requests/sec
+                decimalPlaces: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum(rate(http_server_request_duration_seconds_bucket{service_name="frontend", http_route="/api/checkout", le="1"}[1m]))
+                  seriesNameFormat: under 1 s
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum(rate(http_server_request_duration_seconds_count{service_name="frontend", http_route="/api/checkout"}[1m])) - sum(rate(http_server_request_duration_seconds_bucket{service_name="frontend", http_route="/api/checkout", le="5"}[1m]))
+                  seriesNameFormat: over 5 s
+    p95PerRoute:
+      kind: Panel
+      spec:
+        display:
+          name: p95 per service and route
+          description: frontend and orders are slow together, inventory and payments never are.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              format:
+                unit: seconds
+                decimalPlaces: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: histogram_quantile(0.95, sum by (service_name, http_route, le) (rate(http_server_request_duration_seconds_bucket[1m])))
+                  seriesNameFormat: "{{service_name}} {{http_route}}"
+    runtime:
+      kind: Panel
+      spec:
+        display:
+          name: Is the machine busy?
+          description: JVM CPU and Node.js event loop utilisation. Both near zero. Welcome to the mystery.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: bottom
+            yAxis:
+              format:
+                unit: percent-decimal
+                decimalPlaces: 1
+              min: 0
+              max: 1
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: jvm_cpu_recent_utilization_ratio
+                  seriesNameFormat: "{{service_name}} jvm cpu"
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: nodejs_eventloop_utilization_ratio
+                  seriesNameFormat: "{{service_name}} event loop"
+
+    # ----------------------------------------------------------------- traces
+    edgesRate:
+      kind: Panel
+      spec:
+        display:
+          name: Who calls whom (requests/s per edge)
+          description: From the service_graph connector in the Collector. Nobody drew this.
+        plugin:
+          kind: Table
+          spec:
+            density: compact
+            columnSettings:
+              - name: timestamp
+                hide: true
+              - name: client
+                header: client
+              - name: server
+                header: server
+              - name: value
+                header: req/s
+                format:
+                  unit: decimal
+                  decimalPlaces: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum by (client, server) (rate(traces_service_graph_request_total[5m]))
+    edgesLatency:
+      kind: Panel
+      spec:
+        display:
+          name: p95 latency per edge
+          description: frontend to orders carries the 8 s. orders to inventory and orders to payments do not.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              format:
+                unit: seconds
+                decimalPlaces: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: histogram_quantile(0.95, sum by (client, server, le) (rate(traces_service_graph_request_server_seconds_bucket[5m])))
+                  seriesNameFormat: "{{client}} -> {{server}}"
+    edgesErrors:
+      kind: Panel
+      spec:
+        display:
+          name: Error rate per edge
+          description: Declined cards (402) show up here. The slow warehouse does not, it is not a client/server pair.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              format:
+                unit: percent-decimal
+                decimalPlaces: 1
+              min: 0
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum by (client, server) (rate(traces_service_graph_request_failed_total[5m])) / sum by (client, server) (rate(traces_service_graph_request_total[5m]))
+                  seriesNameFormat: "{{client}} -> {{server}}"
+    redPerService:
+      kind: Panel
+      spec:
+        display:
+          name: Server spans per second, per service (span_metrics)
+          description: The same metrics Jaeger's Monitor tab draws.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: right
+            yAxis:
+              format:
+                unit: requests/sec
+                decimalPlaces: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind="SPAN_KIND_SERVER"}[1m]))
+                  seriesNameFormat: "{{service_name}}"
+    # ------------------------------------------------------------------- logs
+    logVolume:
+      kind: Panel
+      spec:
+        display:
+          name: Log lines per second, orders, by severity
+          description: Three WARN and one ERROR for every EU order.
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              position: bottom
+            visual:
+              display: bar
+              stack: all
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: LokiTimeSeriesQuery
+                spec:
+                  query: sum by (severity_text) (rate({service_name="orders"} | severity_text != "" [1m]))
+    ordersWarnings:
+      kind: Panel
+      spec:
+        display:
+          name: orders, WARN and ERROR
+          description: Open a line to see its trace_id and the other attributes.
+        plugin:
+          kind: LogsTable
+          spec:
+            showTime: true
+            enableDetails: true
+            allowWrap: true
+        queries:
+          - kind: LogQuery
+            spec:
+              plugin:
+                kind: LokiLogQuery
+                spec:
+                  query: '{service_name="orders"} | severity_text =~ "(?i)warn.*|error"'
+                  direction: backward
+
+  layouts:
+    - kind: Grid
+      spec:
+        display:
+          title: Is it slow? (metrics, Prometheus)
+          collapse:
+            open: true
+        items:
+          - { x: 0, y: 0, width: 8, height: 4, content: { $ref: "#/spec/panels/checkoutRate" } }
+          - { x: 8, y: 0, width: 8, height: 4, content: { $ref: "#/spec/panels/checkoutP95" } }
+          - { x: 16, y: 0, width: 8, height: 4, content: { $ref: "#/spec/panels/slowShare" } }
+          - { x: 0, y: 4, width: 12, height: 8, content: { $ref: "#/spec/panels/checkoutQuantiles" } }
+          - { x: 12, y: 4, width: 12, height: 8, content: { $ref: "#/spec/panels/fastSlow" } }
+          - { x: 0, y: 12, width: 12, height: 8, content: { $ref: "#/spec/panels/p95PerRoute" } }
+          - { x: 12, y: 12, width: 12, height: 8, content: { $ref: "#/spec/panels/runtime" } }
+    - kind: Grid
+      spec:
+        display:
+          title: Where? (traces turned into metrics by the Collector's connectors; the waterfalls are in Jaeger)
+          collapse:
+            open: true
+        items:
+          - { x: 0, y: 0, width: 8, height: 8, content: { $ref: "#/spec/panels/edgesRate" } }
+          - { x: 8, y: 0, width: 8, height: 8, content: { $ref: "#/spec/panels/edgesLatency" } }
+          - { x: 16, y: 0, width: 8, height: 8, content: { $ref: "#/spec/panels/edgesErrors" } }
+          - { x: 0, y: 8, width: 24, height: 8, content: { $ref: "#/spec/panels/redPerService" } }
+    - kind: Grid
+      spec:
+        display:
+          title: Why? (logs, Loki)
+          collapse:
+            open: true
+        items:
+          - { x: 0, y: 0, width: 8, height: 10, content: { $ref: "#/spec/panels/logVolume" } }
+          - { x: 8, y: 0, width: 16, height: 10, content: { $ref: "#/spec/panels/ordersWarnings" } }

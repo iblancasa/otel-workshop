@@ -1,0 +1,123 @@
+---
+title: Before the workshop
+description: Install the tools and run make prepare at home. Ten minutes on good wifi, zero minutes on conference wifi.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import Terminal from '../../../components/Terminal.astro';
+
+Do this **before** the event, on a network you trust. The room will not have
+the bandwidth for 30 people pulling images at once.
+
+## Requirements
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Docker | any recent | Docker Desktop, Colima, Rancher Desktop or Podman with the docker CLI. Give the VM **4 GB RAM minimum**, 6 GB is comfortable. |
+| [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) | >= 0.27 | Kubernetes in Docker. |
+| [kubectl](https://kubernetes.io/docs/tasks/tools/) | any recent | |
+| make, git, curl | | Already there on macOS and Linux. |
+
+Apple Silicon and Intel both work. Images are built for the machine that
+runs `make`. About 2 GB of disk for images, 3 GB of RAM while the cluster
+runs.
+
+<Tabs>
+  <TabItem label="macOS">
+  ```bash
+  brew install kind kubectl
+  # Docker Desktop: Settings > Resources > Memory >= 4 GB
+  # or Colima:
+  colima start --cpu 4 --memory 6
+  ```
+  </TabItem>
+  <TabItem label="Linux">
+  ```bash
+  # kind
+  curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+  chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
+  # kubectl: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+  ```
+  </TabItem>
+  <TabItem label="Windows">
+  Use WSL2 with Docker Desktop's WSL integration, then follow the Linux
+  column inside WSL. Native Windows is untested.
+  </TabItem>
+</Tabs>
+
+## Prepare
+
+<Steps>
+
+1. Clone and check your tools:
+
+   ```bash
+   git clone https://github.com/iblancasa/otel-workshop.git
+   cd otel-workshop/otelite
+   make check
+   ```
+
+   <Terminal src="otelite/check" title="make check" />
+
+2. Build everything. Five to fifteen minutes depending on your network:
+
+   ```bash
+   make prepare
+   ```
+
+   This checks tools, pulls the kind node image and the Collector, builds
+   five small images (frontend, orders, inventory, payments, loadgen), pulls
+   otelite, creates
+   a kind cluster called `otel-workshop`, deploys the observability stack and
+   the shop. The shop is deployed **without** instrumentation. That is step 2.
+
+3. Verify:
+
+   ```bash
+   make status
+   ```
+
+   <Terminal src="otelite/status" title="make status" />
+
+   Open [http://localhost:8080](http://localhost:8080) (the shop) and
+   [http://localhost:3000](http://localhost:3000) (otelite, empty for now).
+
+4. Optional, frees memory until the day:
+
+   ```bash
+   make down
+   ```
+
+   Images stay cached. On the day, `make up` recreates the cluster in about a
+   minute with no network at all.
+
+</Steps>
+
+<Aside type="caution" title="No wifi at the venue?">
+The speaker brings USB sticks with an image bundle. See
+[No wifi](/otel-workshop/otelite/reference/offline/). You still need Docker, kind
+and kubectl installed beforehand; those cannot come from a stick.
+</Aside>
+
+## What `make prepare` deploys
+
+```
+namespace observability          namespace shop
+  otelite        :3000 (host)      frontend   Node.js   :8080 (host)
+  otel-collector                   orders     Python
+                                   inventory  Java
+                                   payments   Python
+                                   loadgen    background traffic
+```
+
+Host ports come from the kind config
+([otelite/kind/kind.yaml](https://github.com/iblancasa/otel-workshop/blob/main/otelite/kind/kind.yaml)):
+3000 and 8080 are mapped into the cluster. If one of them is taken on your
+laptop, `make port-forward` is the fallback.
+
+## Something failed?
+
+See [Troubleshooting](/otel-workshop/otelite/reference/troubleshooting/). The three
+usual causes: Docker VM too small, port 3000 or 8080 in use, `kind load`
+choking on a multi-platform image (handled by `scripts/kind-load.sh`, run
+`make load`).

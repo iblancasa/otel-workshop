@@ -1,0 +1,8 @@
+{"version":2,"width":100,"height":24,"timestamp":1792254830,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.ojbUmLAMuz","env":{"SHELL":"/bin/zsh"}}
+[0.02759, "o", "\u001b[1;32m$\u001b[0m curl -s 'localhost:9090/api/v1/label/__name__/values' | python3 scripts/api-helpers.py names http_\r\n"]
+[0.046241, "o", "833 metric names in total, 13 starting with 'http_'\r\n  http_client_request_duration_seconds_bucket\r\n  http_client_request_duration_seconds_count\r\n  http_client_request_duration_seconds_sum\r\n  http_server_active_requests\r\n  http_server_request_body_size_bytes_bucket\r\n  http_server_request_body_size_bytes_count\r\n  http_server_request_body_size_bytes_sum\r\n  http_server_request_duration_seconds_bucket\r\n  http_server_request_duration_seconds_count\r\n  http_server_request_duration_seconds_sum\r\n  http_server_response_body_size_bytes_bucket\r\n  http_server_response_body_size_bytes_count\r\n  http_server_response_body_size_bytes_sum\r\n"]
+[0.856062, "o", "\u001b[1;32m$\u001b[0m curl -s 'localhost:9090/api/v1/query' --data-urlencode 'query=sum by (le) (http_server_request_duration_seconds_bucket{service_name=\"frontend\",http_route=\"/api/checkout\"})' | python3 scripts/api-helpers.py buckets\r\n"]
+[0.885635, "o", "le= 0.005       0\r\nle=  0.01       0\r\nle= 0.025       0\r\nle=  0.05       0\r\nle= 0.075      34\r\nle=   0.1      38\r\nle=  0.25      40\r\nle=   0.5      40\r\nle=  0.75      40\r\n"]
+[0.88564, "o", "le=     1      40\r\nle=   2.5      40\r\nle=     5      40\r\nle=   7.5      41\r\n"]
+[0.885655, "o", "le=    10      59\r\nle=  +Inf      59\r\n"]
+[1.69864, "x", "0"]

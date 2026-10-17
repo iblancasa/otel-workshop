@@ -1,0 +1,91 @@
+---
+title: Start here
+description: The CNCF flavour of the workshop. Same shop, same mystery, with Jaeger, Prometheus, Loki and Perses as the backends.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+A user reports that clicking **Buy** takes 8 seconds. CPU is fine, the
+database looks normal, the server logs say `200 OK`. In this workshop you
+find the bottleneck the way you would in production: with metrics, traces
+and logs, not with `print()`.
+
+Everything runs on your laptop in a [kind](https://kind.sigs.k8s.io/)
+cluster. Nothing leaves your machine.
+
+## This flavour
+
+The shop, the steps and the bug are the same as in the otelite flavour. What
+changes is where the OpenTelemetry Collector sends each signal, and which
+tool you open to look at it:
+
+| Signal | Tool | Open it at | Query language |
+|--------|------|------------|----------------|
+| traces | [Jaeger](https://www.jaegertracing.io/) v2 | [localhost:16686](http://localhost:16686) | search form |
+| metrics | [Prometheus](https://prometheus.io/) 3 | [localhost:9090](http://localhost:9090) | PromQL |
+| logs | [Loki](https://grafana.com/oss/loki/) 3 | through Perses | LogQL |
+| dashboards | [Perses](https://perses.dev/) | [localhost:3000](http://localhost:3000) | PromQL and LogQL in panels |
+
+Four tools instead of one is the price of real tools: each one does its
+signal properly. Jaeger, Prometheus and Perses are CNCF projects. Loki is
+not, but it is what most people run next to them, it takes OTLP natively,
+and Perses can query it. Five pods instead of two, about 1 GB more memory.
+Pick the otelite flavour (switch at the top of the sidebar) if your laptop
+has 8 GB or less.
+
+## How the session goes
+
+<Steps>
+
+1. **At home, before the event.** [Prepare your laptop](/otel-workshop/cncf/prepare/).
+   `make prepare` pulls and builds everything. Ten to fifteen minutes on
+   good wifi.
+
+2. **Talk** (20 min). What OpenTelemetry is. Traces, metrics, logs, the
+   Collector. Your cluster idles with background traffic meanwhile.
+
+3. **Hands-on** (70 min). Six short steps, left sidebar. Each page says
+   what to run, what you should see, and why it matters.
+
+</Steps>
+
+## The steps
+
+| Step | What you do | Where |
+|------|-------------|-------|
+| [0. The complaint](/otel-workshop/cncf/steps/00-complaint/) | Reproduce the 8 s button, look at the usual suspects, see empty tools | shop, kubectl |
+| [1. The stack](/otel-workshop/cncf/steps/01-stack/) | Understand the Collector and the four backends you already deployed | |
+| [2. Instrument](/otel-workshop/cncf/steps/02-instrument/) | Three env vars, three languages, zero code changes | Jaeger, Prometheus, Loki |
+| [3. Metric, trace, log](/otel-workshop/cncf/steps/03-investigate/) | Is it slow? Where? Why? | Perses or Prometheus, Jaeger, Loki |
+| [4. Custom spans](/otel-workshop/cncf/steps/04-custom-spans/) | Make the invisible 7.7 s visible, with attributes and errors | Jaeger |
+| [5. Fix and prove](/otel-workshop/cncf/steps/05-fix/) | Apply the mitigation, prove it with all three signals | all |
+| [6. Service graph](/otel-workshop/cncf/steps/06-service-graph/) | Three maps for free: Jaeger's System Architecture, its Monitor tab, and the `service_graph` connector in Prometheus | Jaeger, Perses |
+
+If you are short on time: 0, 2, 3, 5.
+
+## Reading these pages
+
+Commands you type look like this:
+
+```bash
+make instrument
+```
+
+Terminal windows show the real output of each command, captured on the
+speaker's laptop. They play once when they scroll into view and then stay,
+so you can read them at your own pace. Your pod names and numbers will
+differ.
+
+<Aside type="tip" title="Tabs to keep open">
+The shop: [localhost:8080](http://localhost:8080). Perses:
+[localhost:3000](http://localhost:3000). Jaeger:
+[localhost:16686](http://localhost:16686). Prometheus:
+[localhost:9090](http://localhost:9090). All four work once `make prepare`
+finishes.
+</Aside>
+
+<Aside type="note" title="Time ranges">
+Jaeger searches the last hour by default, Prometheus graphs the last hour,
+Perses dashboards the last 15 minutes with a 10 s refresh. When a view looks
+empty, check its time picker before anything else.
+</Aside>

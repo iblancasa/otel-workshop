@@ -1,0 +1,13 @@
+{"version":2,"width":100,"height":24,"timestamp":1792254737,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.RJEUCGA0zl","env":{"SHELL":"/bin/zsh"}}
+[0.014019, "o", "\u001b[1;32m$\u001b[0m make check\r\n"]
+[0.043105, "o", "Checking tools...\r\n"]
+[0.058798, "o", "  [ok]   docker   29.5.2\r\n"]
+[0.064479, "o", "  [ok]   kind     kind v0.27.0 go1.23.6 darwin/arm64\r\n"]
+[0.086444, "o", "  [ok]   kubectl  Client Version: v1.37.1\r\n"]
+[0.263199, "o", "  [WARN] port 8080 is in use on this host. Use 'make port-forward' later, or free the port.\r\n"]
+[0.316914, "o", "  [WARN] port 3000 is in use on this host. Use 'make port-forward' later, or free the port.\r\n"]
+[0.370947, "o", "  [WARN] port 9090 is in use on this host. Use 'make port-forward' later, or free the port.\r\n"]
+[0.424175, "o", "  [WARN] port 16686 is in use on this host. Use 'make port-forward' later, or free the port.\r\n"]
+[0.477116, "o", "  [WARN] port 3100 is in use on this host. Use 'make port-forward' later, or free the port.\r\n"]
+[0.477136, "o", "All good.\r\n"]
+[1.300408, "x", "0"]

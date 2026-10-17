@@ -1,0 +1,12 @@
+{"version":2,"width":100,"height":24,"timestamp":1792254859,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.QHw1TlVRoG","env":{"SHELL":"/bin/zsh"}}
+[0.026922, "o", "\u001b[1;32m$\u001b[0m TID=$(curl -s -G localhost:16686/api/v3/trace-summaries --data-urlencode 'query.service_name=orders' --data-urlencode 'query.operation_name=POST /orders' --data-urlencode 'query.duration_min=5s' --data-urlencode \"query.start_time_min=$(date -u -v-30M +%Y-%m-%dT%H:%M:%SZ)\" --data-urlencode \"query.start_time_max=$(date -u +%Y-%m-%dT%H:%M:%SZ)\" --data-urlencode 'query.search_depth=1' | python3 scripts/api-helpers.py first-trace-id)\r\n"]
+[0.863899, "o", "\u001b[1;32m$\u001b[0m curl -s \"localhost:16686/api/v3/traces/$TID\" | python3 scripts/api-helpers.py spans\r\n"]
+[0.886939, "o", "orders        0 ms ok     POST /orders http receive\r\norders        4 ms ok     GET\r\ninventory     2 ms ok     GET /stock/\r\norders     2501 ms ERROR  warehouse.call_primary\r\n"]
+[0.886944, "o", "orders     2501 ms ERROR  warehouse.call_primary\r\nfrontend   7958 ms ok     request handler - /api/checkout\r\n"]
+[0.886954, "o", "frontend   7958 ms ok     request handler - /api/checkout\r\nfrontend   7956 ms ok     POST\r\nfrontend   7959 ms ok     POST /api/checkout\r\n"]
+[0.886969, "o", "payments      0 ms ok     POST /charge http receive\r\npayments      0 ms ok     POST /charge http send\r\npayments      0 ms ok     POST /charge http send\r\npayments     32 ms ok     POST /charge\r\n"]
+[0.886972, "o", "orders     2506 ms ERROR  warehouse.call_primary\r\norders      401 ms ok     warehouse.call_fallback\r\n"]
+[0.886974, "o", "orders     7913 ms ERROR  warehouse.reserve\r\n"]
+[0.886983, "o", "orders       33 ms ok     POST\r\norders        0 ms ok     POST /orders http send\r\norders        0 ms ok     POST /orders http send\r\n"]
+[0.886984, "o", "orders     7954 ms ok     POST /orders\r\n"]
+[1.700906, "x", "0"]

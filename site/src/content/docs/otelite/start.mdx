@@ -1,0 +1,68 @@
+---
+title: Start here
+description: What this workshop is, how it is organised, and how to read these pages.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+A user reports that clicking **Buy** takes 8 seconds. CPU is fine, the
+database looks normal, the server logs say `200 OK`. In this workshop you
+find the bottleneck the way you would in production: with metrics, traces
+and logs, not with `print()`.
+
+Everything runs on your laptop in a [kind](https://kind.sigs.k8s.io/)
+cluster. Nothing leaves your machine.
+
+## How the session goes
+
+<Steps>
+
+1. **At home, before the event.** [Prepare your laptop](/otel-workshop/otelite/prepare/).
+   `make prepare` pulls and builds everything. Ten minutes on good wifi.
+
+2. **Talk** (20 min). What OpenTelemetry is. Traces, metrics, logs, the
+   Collector. Your cluster idles with background traffic meanwhile.
+
+3. **Hands-on** (70 min). Six short steps, left sidebar. Each page says
+   what to run, what you should see, and why it matters.
+
+</Steps>
+
+## The steps
+
+| Step | What you do | Signal |
+|------|-------------|--------|
+| [0. The complaint](/otel-workshop/otelite/steps/00-complaint/) | Reproduce the 8 s button, look at the usual suspects, see an empty dashboard | none yet |
+| [1. The stack](/otel-workshop/otelite/steps/01-stack/) | Understand the Collector and otelite you already deployed | |
+| [2. Instrument](/otel-workshop/otelite/steps/02-instrument/) | Three env vars, three languages, zero code changes | all three appear |
+| [3. Metric, trace, log](/otel-workshop/otelite/steps/03-investigate/) | Is it slow? Where? Why? | metric, trace, log |
+| [4. Custom spans](/otel-workshop/otelite/steps/04-custom-spans/) | Make the invisible 7.7 s visible, with attributes and errors | trace |
+| [5. Fix and prove](/otel-workshop/otelite/steps/05-fix/) | Apply the mitigation, prove it with all three signals | all three |
+| [6. Service graph](/otel-workshop/otelite/steps/06-service-graph/) | Let the Collector draw the map: `service_graph` connector + otelite tab | metrics from traces |
+
+If you are short on time: 0, 2, 3, 5.
+
+## Reading these pages
+
+Commands you type look like this:
+
+```bash
+make instrument
+```
+
+Terminal windows show the real output of each command, captured on the
+speaker's laptop. They play once when they scroll into view and then stay,
+so you can read them at your own pace. Your pod names and numbers will
+differ.
+
+<Aside type="tip" title="Two URLs to keep open">
+The shop: [http://localhost:8080](http://localhost:8080). The otelite
+dashboard: [http://localhost:3000](http://localhost:3000). Both work once
+`make prepare` finishes.
+</Aside>
+
+<Aside type="note" title="otelite freezes time">
+Every otelite tab fixes its time window when the page loads. Tick
+**Auto-refresh**, or click **Now** then **Apply**, to see new data. You will
+forget this at least once.
+</Aside>

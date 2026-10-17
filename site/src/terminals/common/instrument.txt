@@ -1,0 +1,35 @@
+[1;32m$[0m kubectl kustomize ../k8s/apps/instrumented | diff <(kubectl kustomize ../k8s/apps/base) - | grep '^>' | head -12
+>         - name: OTEL_SERVICE_NAME
+>           value: frontend
+>         - name: NODE_OPTIONS
+>           value: --require @opentelemetry/auto-instrumentations-node/register
+>         - name: OTEL_NODE_RESOURCE_DETECTORS
+>           value: env,host,os,process
+>         - name: POD_NAME
+>           valueFrom:
+>             fieldRef:
+>               fieldPath: metadata.name
+>         - name: OTEL_EXPORTER_OTLP_ENDPOINT
+>           value: http://otel-collector.observability.svc.cluster.local:4318
+[1;32m$[0m make instrument
+kubectl --context kind-otel-workshop-cncf apply -k /Users/israel.blancas/projects/workshop/k8s/apps/instrumented
+namespace/shop unchanged
+service/frontend unchanged
+service/inventory unchanged
+service/orders unchanged
+service/payments unchanged
+deployment.apps/frontend configured
+deployment.apps/inventory configured
+deployment.apps/loadgen unchanged
+deployment.apps/orders configured
+deployment.apps/payments configured
+kubectl --context kind-otel-workshop-cncf -n shop rollout status deploy --timeout=180s
+Waiting for deployment "frontend" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "frontend" rollout to finish: 1 old replicas are pending termination...
+deployment "frontend" successfully rolled out
+Waiting for deployment "inventory" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "inventory" rollout to finish: 1 old replicas are pending termination...
+deployment "inventory" successfully rolled out
+deployment "loadgen" successfully rolled out
+deployment "orders" successfully rolled out
+deployment "payments" successfully rolled out

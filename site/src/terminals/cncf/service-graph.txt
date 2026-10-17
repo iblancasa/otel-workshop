@@ -1,0 +1,6 @@
+[1;32m$[0m curl -s localhost:9090/api/v1/query --data-urlencode 'query=sum by (client, server) (rate(traces_service_graph_request_total[5m]))' | python3 scripts/api-helpers.py edges
+    frontend -> orders         0.36 req/s
+      orders -> payments       0.34 req/s
+      orders -> inventory      0.34 req/s
+        user -> payments       0.00 req/s
+        user -> frontend       0.29 req/s

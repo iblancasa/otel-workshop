@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Verify the tools needed for the workshop.
+# Usage: check-tools.sh [host-port ...]   (ports the kind config maps; warns if taken)
 set -u
+PORTS=("$@")
+[ ${#PORTS[@]} -eq 0 ] && PORTS=(8080)
 ok=1
 need() {
   if command -v "$1" >/dev/null 2>&1; then
@@ -25,7 +28,7 @@ if command -v kind >/dev/null 2>&1; then
   fi
 fi
 
-for p in 3000 8080; do
+for p in "${PORTS[@]}"; do
   if lsof -iTCP:$p -sTCP:LISTEN >/dev/null 2>&1; then
     echo "  [WARN] port $p is in use on this host. Use 'make port-forward' later, or free the port."
   fi

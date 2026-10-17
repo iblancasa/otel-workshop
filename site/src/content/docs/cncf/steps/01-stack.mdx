@@ -1,0 +1,191 @@
+---
+title: "Step 1: the observability stack"
+description: What make prepare deployed in the observability namespace. One Collector, four backends, and why that is less configuration than one backend was.
+sidebar:
+  label: 1. The stack
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Goal:** understand the five boxes in the `observability` namespace before
+you send anything to them.
+
+```
+                 OTLP :4318                    ┌──► jaeger      :16686  traces      (memory)
+ frontend ─┐                                   │
+ orders   ─┼──────► otel-collector ────────────┼──► prometheus  :9090   metrics     (OTLP receiver)
+ inventory ┘        receive, batch,            │
+ payments ┘         derive, fan out            └──► loki        :3100   logs        (OTLP endpoint)
+
+                                                    perses      :3000   dashboards, reads prometheus + loki
+```
+
+## OpenTelemetry Collector
+
+The services do not talk to the backends. They send OTLP to the Collector,
+and the Collector decides where each signal goes. The config is in
+[cncf/k8s/stack/otel-collector-config.yaml](https://github.com/iblancasa/otel-workshop/blob/main/cncf/k8s/stack/otel-collector-config.yaml):
+
+```yaml title="otel-collector-config.yaml (abridged)"
+receivers:
+  otlp:                        # accept OTLP on 4317 (gRPC) and 4318 (HTTP)
+processors:
+  batch:                       # group signals before sending, 1 s
+connectors:
+  span_metrics:                # spans -> request/error/duration metrics (Jaeger's Monitor tab, step 6)
+  service_graph:               # client/server span pairs -> per-edge metrics (step 6)
+exporters:
+  otlp/jaeger:                 # gRPC to jaeger:4317
+  otlphttp/prometheus:         # POST to prometheus:9090/api/v1/otlp/v1/metrics
+  otlphttp/loki:               # POST to loki:3100/otlp/v1/logs
+  debug:                       # print to stdout (not in a pipeline right now)
+service:
+  pipelines:
+    traces:  { receivers: [otlp],                              processors: [batch], exporters: [otlp/jaeger, span_metrics, service_graph] }
+    metrics: { receivers: [otlp, span_metrics, service_graph], processors: [batch], exporters: [otlphttp/prometheus] }
+    logs:    { receivers: [otlp],                              processors: [batch], exporters: [otlphttp/loki] }
+```
+
+### The components, with their docs
+
+| Component | Kind | Distribution | What it does here |
+|-----------|------|--------------|-------------------|
+| [`otlp` receiver](https://github.com/open-telemetry/opentelemetry-collector/tree/main/receiver/otlpreceiver) | receiver | core | Accepts OTLP over gRPC (4317) and HTTP (4318) from the apps |
+| [`batch` processor](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor) | processor | core | Groups signals before export, 1 s timeout |
+| [`span_metrics` connector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/spanmetricsconnector) | connector | contrib | Counts and times every span per service, span name, kind and status; adds `http.route` and the status code as dimensions |
+| [`service_graph` connector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/servicegraphconnector) | connector | contrib | Pairs client/server spans into per-edge metrics ([step 6](/otel-workshop/cncf/steps/06-service-graph/)) |
+| [`otlp` exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlpexporter) | exporter | core | Sends traces to Jaeger over gRPC |
+| [`otlphttp` exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter) | exporter | core | Sends metrics to Prometheus and logs to Loki over HTTP, each to the backend's OTLP path |
+| [`debug` exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/debugexporter) | exporter | core | Prints signals to stdout, for "is anything arriving?" |
+
+Core components ship in every Collector build. Contrib ones need the
+`otel/opentelemetry-collector-contrib` image, which is why the workshop uses
+it. The concepts page on
+[opentelemetry.io](https://opentelemetry.io/docs/collector/configuration/)
+explains receivers, processors, exporters, connectors and pipelines in one
+read.
+
+<Aside type="note" title="What is not here">
+The otelite flavour needs three extra processors to work around its backend:
+copy `service.name` onto every span, rename the duration metric per service,
+drop the boring routes. None of that exists in this file. Jaeger keeps
+resource attributes, Prometheus keeps series apart by label, Loki indexes
+`service.name`. Real backends, fewer workarounds.
+</Aside>
+
+### Why a hop in the middle?
+
+- Applications know one address. Change a backend, add a second one, add
+  sampling: the apps never restart.
+- The Collector batches, retries, adds Kubernetes metadata, drops
+  health-check spans, redacts attributes, converts between protocols.
+- It derives. Two connectors turn the traces you already have into metrics
+  nobody had to instrument.
+- It absorbs load. If a backend is down, the Collector queues for a while.
+
+<Aside type="tip" title="Try it">
+Add `debug` to the `exporters` list of the `logs` pipeline, apply, restart,
+and watch the Collector print every log record it receives. Remember to put
+it back, it is noisy.
+
+```bash
+kubectl apply -k k8s/stack
+kubectl -n observability rollout restart deploy/otel-collector
+make collector-logs
+```
+</Aside>
+
+## Jaeger
+
+[Jaeger](https://www.jaegertracing.io/) v2 stores and shows traces. Version
+2 is itself built on the Collector framework, so its config file
+([jaeger-config.yaml](https://github.com/iblancasa/otel-workshop/blob/main/cncf/k8s/stack/jaeger-config.yaml))
+has the same shape: an `otlp` receiver, a `batch` processor, a pipeline, and
+two Jaeger extensions:
+
+```yaml title="jaeger-config.yaml (abridged)"
+extensions:
+  jaeger_storage:
+    backends:
+      memory_store: { memory: { max_traces: 50000 } }   # traces live in RAM, gone on restart
+    metric_backends:
+      prometheus_store:                                  # the Monitor tab queries Prometheus
+        prometheus: { endpoint: http://prometheus:9090, normalize_calls: true, normalize_duration: true }
+  jaeger_query:
+    storage: { traces: memory_store, metrics: prometheus_store }
+    ui: { config_file: /etc/jaeger/ui.json }             # enables the Monitor and System Architecture tabs
+    http: { endpoint: 0.0.0.0:16686 }
+```
+
+Its HTTP API lives under `/api/v3/`, OTLP-shaped JSON, and `/api/dependencies`
+and `/api/metrics/` for the two derived views. Docs:
+[deployment and configuration](https://www.jaegertracing.io/docs/latest/deployment/),
+[Service Performance Monitoring](https://www.jaegertracing.io/docs/latest/architecture/spm/).
+
+## Prometheus
+
+[Prometheus](https://prometheus.io/) 3 stores metrics. It normally scrapes
+`/metrics` endpoints; since 3.0 it also accepts OTLP pushes when started
+with `--web.enable-otlp-receiver`, which is how the Collector delivers the
+apps' metrics. On the way in it translates names
+([prometheus-config.yaml](https://github.com/iblancasa/otel-workshop/blob/main/cncf/k8s/stack/prometheus-config.yaml)):
+
+```yaml title="prometheus-config.yaml (the OTLP part)"
+otlp:
+  translation_strategy: UnderscoreEscapingWithSuffixes   # dots -> underscores, unit and type suffixes
+  promote_resource_attributes: [service.name, service.namespace, service.instance.id, deployment.environment, k8s.pod.name]
+  keep_identifying_resource_attributes: true
+```
+
+So `http.server.request.duration` (a histogram in seconds) becomes
+`http_server_request_duration_seconds_bucket`, `_count` and `_sum`, and the
+resource attribute `service.name` becomes the label `service_name` on every
+series. Resource attributes that are not promoted end up on a separate
+`target_info` series. The guide: [Using Prometheus as your OpenTelemetry
+backend](https://prometheus.io/docs/guides/opentelemetry/). The names you
+will meet are listed in [The metrics, explained](/otel-workshop/cncf/reference/metrics/).
+
+It also scrapes, the classic way, the `/metrics` of the Collector, Jaeger,
+Loki and Perses. Useful when something in the stack misbehaves.
+
+## Loki
+
+[Loki](https://grafana.com/oss/loki/) 3 stores logs. It indexes a few
+labels per stream and keeps everything else as the log line plus
+*structured metadata*. Its OTLP endpoint (`/otlp/v1/logs`) maps the
+OpenTelemetry log record for you: `service.name`, `k8s.pod.name`,
+`deployment.environment` and `service.instance.id` (when the SDK sets one,
+the Java agent does) become stream labels; severity, trace id, span id,
+scope and every other attribute become structured metadata you can filter
+on without parsing the line
+([loki-config.yaml](https://github.com/iblancasa/otel-workshop/blob/main/cncf/k8s/stack/loki-config.yaml),
+[Loki and OpenTelemetry](https://grafana.com/docs/loki/latest/send-data/otel/)).
+
+```text title="LogQL"
+{service_name="orders"} | severity_text="ERROR"
+{service_name=~".+"} | trace_id="cfc4d54ac3a7c0359a50392cbe567dcf"
+```
+
+Loki has no UI of its own. Perses queries it, and so does
+[`logcli`](https://grafana.com/docs/loki/latest/query/logcli/) if you
+prefer a terminal (`brew install logcli`, endpoint `http://localhost:3100`).
+
+## Perses
+
+[Perses](https://perses.dev/) draws dashboards. It is a CNCF project with
+dashboards-as-code at its core: the project, the two datasources and the
+workshop dashboard are plain YAML files
+([cncf/k8s/stack/perses/](https://github.com/iblancasa/otel-workshop/tree/main/cncf/k8s/stack/perses))
+provisioned at startup. The dashboard has one row per question of step 3:
+*is it slow* (Prometheus), *where* (the connector metrics), *why* (Loki).
+Perses also has an **Explore** page for ad hoc PromQL and LogQL.
+
+Perses ships a Jaeger datasource plugin, but it speaks Jaeger's old `/api/`
+endpoints, which Jaeger 2.22 no longer serves. Traces are explored in the
+Jaeger UI, which is where the waterfall lives anyway.
+
+## Is anything arriving?
+
+Not yet. Jaeger lists one service (itself), Prometheus answers only `up`,
+the dashboard has no data, and the Collector logs show no errors, because
+nobody sends anything. Next: make the four services talk.

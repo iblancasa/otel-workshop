@@ -1,4 +1,0 @@
-{"version":2,"width":100,"height":24,"timestamp":1792063951,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.0YryrPM4Sc","env":{"SHELL":"/bin/zsh"}}
-[0.023937, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/loadgen --tail=10\r\n"]
-[0.071314, "o", "US-MUG-02 -> 200 in 79 ms\r\nUS-MUG-02 -> 200 in 73 ms\r\nUS-MUG-02 -> 200 in 68 ms\r\nUS-TSHIRT-01 -> 200 in 71 ms\r\nEU-POSTER-04 -> 402 in 7990 ms\r\nUS-MUG-02 -> 200 in 73 ms\r\nUS-MUG-02 -> 200 in 71 ms\r\nUS-TSHIRT-01 -> 200 in 70 ms\r\nUS-TSHIRT-01 -> 200 in 67 ms\r\nUS-MUG-02 -> 200 in 65 ms\r\n"]
-[0.883121, "x", "0"]

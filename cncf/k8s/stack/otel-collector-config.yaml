@@ -1,0 +1,97 @@
+# OpenTelemetry Collector, CNCF flavour. Applications send OTLP here; the
+# Collector batches and fans out: traces to Jaeger, metrics to Prometheus,
+# logs to Loki. Compare with the otelite flavour: no transform or filter
+# processors. Real backends handle resource attributes and metric series
+# properly, so nothing needs massaging.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+
+# A connector is both an exporter (end of one pipeline) and a receiver
+# (start of another). Two of them turn traces into metrics:
+connectors:
+  # span_metrics: RED metrics per (service, span name, span kind, status),
+  # plus the HTTP attributes we ask for. Jaeger's Monitor tab reads these
+  # from Prometheus (Service Performance Monitoring):
+  #   traces_span_metrics_calls_total{service_name, span_name, span_kind, status_code, ...}
+  #   traces_span_metrics_duration_milliseconds_bucket{..., le}
+  span_metrics:
+    histogram:
+      explicit:
+        buckets: [10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s]
+    dimensions:
+      - name: http.request.method
+      - name: http.route
+      - name: http.response.status_code
+    # One Collector, no need to tag every series with its UUID.
+    exclude_dimensions: [collector.instance.id]
+    metrics_flush_interval: 15s
+    exemplars:
+      enabled: true
+  # service_graph: pairs client/server spans and emits one series per edge:
+  #   traces_service_graph_request_total{client, server, connection_type}
+  #   traces_service_graph_request_failed_total{...}
+  #   traces_service_graph_request_server_seconds_bucket{...}  (histogram)
+  #   traces_service_graph_request_client_seconds_bucket{...}  (histogram)
+  service_graph:
+    metrics_flush_interval: 10s
+    store:
+      ttl: 10s
+      max_items: 5000
+    latency_histogram_buckets: [10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s]
+    # When a client span never meets its server span (the callee was down,
+    # or is not instrumented), name the virtual node after these attributes
+    # instead of "unknown". server.address covers plain HTTP calls.
+    virtual_node_peer_attributes: [peer.service, server.address, net.peer.name, db.name, db.system]
+
+exporters:
+  # Jaeger v2 speaks OTLP natively.
+  otlp/jaeger:
+    endpoint: jaeger.observability.svc.cluster.local:4317
+    tls:
+      insecure: true
+  # Prometheus 3 has an OTLP receiver (--web.enable-otlp-receiver). It
+  # translates names on the way in: http.server.request.duration (unit s)
+  # becomes http_server_request_duration_seconds_bucket, _count, _sum.
+  otlphttp/prometheus:
+    metrics_endpoint: http://prometheus.observability.svc.cluster.local:9090/api/v1/otlp/v1/metrics
+  # Loki 3 has an OTLP endpoint. Resource attributes such as service.name
+  # become stream labels, everything else becomes structured metadata.
+  otlphttp/loki:
+    logs_endpoint: http://loki.observability.svc.cluster.local:3100/otlp/v1/logs
+  # Add to a pipeline to print every signal to the Collector's stdout.
+  # Handy when you ask "is anything arriving at all?".
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888   # Prometheus scrapes the Collector's own metrics here
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger, span_metrics, service_graph]
+    metrics:
+      receivers: [otlp, span_metrics, service_graph]
+      processors: [batch]
+      exporters: [otlphttp/prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki]

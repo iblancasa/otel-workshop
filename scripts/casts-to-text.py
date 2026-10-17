@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Convert asciinema v2 .cast files into plain terminal transcripts.
 
-Input:  site/src/terminals/*.cast   (recorded by scripts/record-casts.sh)
-Output: site/src/terminals/*.txt    (what the <Terminal> component renders)
+Input:  site/src/terminals/**/*.cast   (recorded by <flavour>/scripts/record-casts.sh)
+Output: site/src/terminals/**/*.txt    (what the <Terminal> component renders)
 
 Keeps the ANSI colour sequences the recorder used for the prompt; the
 component turns them into spans. Everything else (cursor movement, carriage
@@ -52,10 +52,10 @@ def convert(cast: Path) -> Path:
 
 
 def main(argv):
-    casts = [Path(a) for a in argv] or sorted(SRC.glob("*.cast"))
+    casts = [Path(a) for a in argv] or sorted(SRC.rglob("*.cast"))
     for c in casts:
         t = convert(c)
-        print(f"{c.name} -> {t.name} ({t.stat().st_size} bytes)")
+        print(f"{c.relative_to(SRC) if c.is_relative_to(SRC) else c} -> {t.name} ({t.stat().st_size} bytes)")
 
 
 if __name__ == "__main__":

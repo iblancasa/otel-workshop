@@ -1,6 +1,0 @@
-{"version":2,"width":100,"height":24,"timestamp":1792063938,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.vWDM26pQZq","env":{"SHELL":"/bin/zsh"}}
-[0.02212, "o", "\u001b[1;32m$\u001b[0m curl -s -w ' -> %{time_total}s\\n' -X POST localhost:8080/api/checkout -H 'content-type: application/json' -d '{\"sku\":\"US-MUG-02\",\"qty\":1}'\r\n"]
-[0.108236, "o", "{\"order_id\":\"b802b87b\",\"sku\":\"US-MUG-02\",\"qty\":1,\"warehouse\":{\"region\":\"us-east\",\"mode\":\"primary\"},\"payment\":{\"payment_id\":\"cd85f523\",\"amount\":12},\"elapsed_ms\":68} -> 0.075606s\r\n"]
-[0.915683, "o", "\u001b[1;32m$\u001b[0m curl -s -w ' -> %{time_total}s\\n' -X POST localhost:8080/api/checkout -H 'content-type: application/json' -d '{\"sku\":\"EU-HOODIE-03\",\"qty\":1}'\r\n"]
-[8.902552, "o", "{\"order_id\":\"8a02ce3a\",\"sku\":\"EU-HOODIE-03\",\"qty\":1,\"warehouse\":{\"region\":\"eu-west\",\"mode\":\"fallback\"},\"payment\":{\"payment_id\":\"a6a86c7d\",\"amount\":55},\"elapsed_ms\":7972} -> 7.975392s\r\n"]
-[9.715361, "x", "0"]

@@ -1,0 +1,47 @@
+# The CNCF observability stack: one Collector fans out to four backends.
+#
+#   apps --OTLP--> otel-collector --> jaeger      (traces)
+#                                 --> prometheus  (metrics, via its OTLP receiver)
+#                                 --> loki        (logs, via its OTLP endpoint)
+#                  perses reads prometheus, loki and jaeger
+#
+# Every config file is mounted from a ConfigMap generated here, so editing
+# jaeger-config.yaml and running `kubectl apply -k k8s/stack` is enough
+# (then `kubectl -n observability rollout restart deploy/jaeger`).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: observability
+
+resources:
+  - namespace.yaml
+  - otel-collector.yaml
+  - jaeger.yaml
+  - prometheus.yaml
+  - loki.yaml
+  - perses.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: otel-collector-config
+    files:
+      - config.yaml=otel-collector-config.yaml
+  - name: jaeger-config
+    files:
+      - config.yaml=jaeger-config.yaml
+      - ui.json=jaeger-ui.json
+  - name: prometheus-config
+    files:
+      - prometheus.yml=prometheus-config.yaml
+  - name: loki-config
+    files:
+      - loki.yaml=loki-config.yaml
+  - name: perses-config
+    files:
+      - config.yaml=perses-config.yaml
+  - name: perses-provisioning
+    files:
+      - perses/project.yaml
+      - perses/datasources.yaml
+      - perses/dashboard-slow-api.yaml

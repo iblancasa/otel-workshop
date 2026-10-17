@@ -1,0 +1,6 @@
+kind: Project
+metadata:
+  name: workshop
+spec:
+  display:
+    name: The mystery of the slow API

@@ -1,0 +1,17 @@
+---
+/**
+ * Landing page helper. The hero buttons point at the otelite flavour; if the
+ * visitor last read the CNCF pages (see FlavourSwitch), point them there.
+ */
+import { STORAGE_KEY } from '../flavours';
+---
+
+<script define:vars={{ STORAGE_KEY }}>
+	try {
+		if (localStorage.getItem(STORAGE_KEY) === 'cncf') {
+			document.querySelectorAll('[data-flavour-link]').forEach((a) => {
+				a.setAttribute('href', a.getAttribute('href').replace('/otelite/', '/cncf/'));
+			});
+		}
+	} catch {}
+</script>

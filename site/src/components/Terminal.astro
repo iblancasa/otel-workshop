@@ -5,8 +5,14 @@
  *   <Terminal src="instrument" title="make instrument" />
  *
  * `src` names a file in src/terminals/<src>.txt, produced from a recording by
- * `make casts` (scripts/record-casts.sh + scripts/casts-to-text.py). Lines
- * that start with a `$ ` prompt are typed; the rest streams in below them.
+ * `make casts` in a flavour directory (<flavour>/scripts/record-casts.sh +
+ * scripts/casts-to-text.py). Transcripts shared by both flavours live in
+ * terminals/common/, the others in terminals/otelite/ and terminals/cncf/:
+ *
+ *   <Terminal src="common/instrument" title="make instrument" />
+ *   <Terminal src="cncf/promql" title="Prometheus API" />
+ *
+ * Lines that start with a `$ ` prompt are typed; the rest streams in below them.
  * No loop, no player chrome. Reduced-motion users and the "show all" button
  * get the full transcript at once.
  */
@@ -19,12 +25,12 @@ interface Props {
 
 const { src, title, maxHeight = '28rem' } = Astro.props;
 
-const files = import.meta.glob('../terminals/*.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const files = import.meta.glob('../terminals/**/*.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const key = `../terminals/${src}.txt`;
+// A transcript that has not been recorded yet (run `make casts` in the
+// flavour directory) renders as a short note instead of failing the build.
 const raw = files[key];
-if (raw === undefined) {
-  throw new Error(`Terminal: no transcript "${src}". Known: ${Object.keys(files).map((k) => k.replace('../terminals/', '').replace('.txt', '')).join(', ')}`);
-}
+const missing = raw === undefined;
 
 // Minimal ANSI SGR -> HTML. Enough for the prompt colour and the odd bold.
 const COLORS: Record<string, string> = {
@@ -64,7 +70,7 @@ function ansiToHtml(line: string): string {
 
 const PROMPT = /^(?:\x1b\[[0-9;]*m)*\$(?:\x1b\[[0-9;]*m)* /;
 const stripAnsi = (l: string) => l.replace(/\x1b\[[0-9;]*m/g, '');
-const lines = raw.replace(/\n$/, '').split('\n').map((l) => ({
+const lines = (raw ?? '').replace(/\n$/, '').split('\n').map((l) => ({
   kind: PROMPT.test(l) ? 'cmd' : 'out',
   html: ansiToHtml(l) || '&nbsp;',
   text: PROMPT.test(l) ? stripAnsi(l).replace(/^\$ /, '') : '',
@@ -72,6 +78,9 @@ const lines = raw.replace(/\n$/, '').split('\n').map((l) => ({
 const id = `term-${src.replace(/[^a-z0-9]+/gi, '-')}-${Math.random().toString(36).slice(2, 7)}`;
 ---
 
+{missing ? (
+  <p class="term-missing">Terminal transcript <code>{src}</code> is not recorded yet. In the flavour directory, run <code>make casts</code> against a cluster at step 0.</p>
+) : (
 <figure class="term" id={id} data-term>
   <div class="term-bar">
     <span class="term-dots"><i></i><i></i><i></i></span>
@@ -84,6 +93,7 @@ const id = `term-${src.replace(/[^a-z0-9]+/gi, '-')}-${Math.random().toString(36
       : <span class="term-line term-out" set:html={l.html} />
   ))}</code></pre>
 </figure>
+)}
 
 <script>
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -176,6 +186,14 @@ const id = `term-${src.replace(/[^a-z0-9]+/gi, '-')}-${Math.random().toString(36
 </script>
 
 <style>
+  .term-missing {
+    margin: 1.5rem 0;
+    padding: 0.6rem 0.9rem;
+    border: 1px dashed var(--sl-color-gray-4);
+    border-radius: 0.6rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
   .term {
     margin: 1.5rem 0;
     border-radius: 0.6rem;

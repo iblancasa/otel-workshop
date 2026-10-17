@@ -1,0 +1,102 @@
+---
+/**
+ * Segmented control at the top of the sidebar: otelite | CNCF.
+ * Switching keeps you on the same page of the other flavour when it exists,
+ * otherwise sends you to that flavour's "Start here". The choice is stored in
+ * localStorage so the landing page can point its buttons at it.
+ */
+import { DEFAULT_FLAVOUR, FLAVOURS, STORAGE_KEY, flavourOfPath, type Flavour } from '../flavours';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const current: Flavour = flavourOfPath(Astro.url.pathname) ?? DEFAULT_FLAVOUR;
+
+// Every doc page id, e.g. "cncf/steps/03-investigate", to know where the other flavour can land.
+const pages = new Set(
+	Object.keys(import.meta.glob('../content/docs/**/*.{md,mdx}')).map((k) =>
+		k.replace('../content/docs/', '').replace(/\.mdx?$/, '').replace(/\/index$/, ''),
+	),
+);
+const currentId = Astro.url.pathname.replace(base, '').replace(/^\/|\/$/g, '');
+
+function target(flavour: Flavour) {
+	const candidate = currentId.replace(/^(otelite|cncf)/, flavour);
+	const id = pages.has(candidate) && flavourOfPath(candidate) === flavour ? candidate : `${flavour}/start`;
+	return `${base}/${id}/`;
+}
+---
+
+<nav class="flavour" aria-label="Workshop flavour">
+	<div class="flavour-switch" role="group" aria-label="Choose a flavour">
+		{
+			(Object.keys(FLAVOURS) as Flavour[]).map((f) => (
+				<a
+					href={target(f)}
+					data-flavour={f}
+					class:list={[{ 'is-active': f === current }]}
+					aria-current={f === current ? 'true' : undefined}
+					title={FLAVOURS[f].hint}
+				>
+					<span class="flavour-name">{FLAVOURS[f].label}</span>
+					<span class="flavour-short">{FLAVOURS[f].short}</span>
+				</a>
+			))
+		}
+	</div>
+	<p class="flavour-hint">{FLAVOURS[current].hint}</p>
+</nav>
+
+<script define:vars={{ STORAGE_KEY, current }}>
+	// Being on a page of a flavour is choosing it. The landing page reads this.
+	try {
+		localStorage.setItem(STORAGE_KEY, current);
+	} catch {}
+</script>
+
+<style>
+	.flavour {
+		margin: 0 0 1rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--sl-color-hairline-light);
+	}
+	.flavour-switch {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.25rem;
+		padding: 0.25rem;
+		border-radius: 0.6rem;
+		background: var(--sl-color-gray-6);
+		border: 1px solid var(--sl-color-hairline-light);
+	}
+	.flavour-switch a {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		padding: 0.4rem 0.6rem;
+		border-radius: 0.45rem;
+		text-decoration: none;
+		color: var(--sl-color-gray-2);
+		line-height: 1.2;
+	}
+	.flavour-switch a:hover {
+		color: var(--sl-color-white);
+		background: var(--sl-color-gray-5);
+	}
+	.flavour-switch a.is-active {
+		background: var(--sl-color-text-accent);
+		color: var(--sl-color-black);
+	}
+	.flavour-name {
+		font-weight: 600;
+		font-size: var(--sl-text-sm);
+	}
+	.flavour-short {
+		font-size: var(--sl-text-xs);
+		opacity: 0.85;
+	}
+	.flavour-hint {
+		margin: 0.6rem 0 0;
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+		line-height: 1.4;
+	}
+</style>

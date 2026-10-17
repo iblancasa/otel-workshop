@@ -1,0 +1,4 @@
+[1;32m$[0m curl -s -w ' -> %{time_total}s\n' -X POST localhost:8080/api/checkout -H 'content-type: application/json' -d '{"sku":"US-MUG-02","qty":1}'
+{"order_id":"d7add8fc","sku":"US-MUG-02","qty":1,"warehouse":{"region":"us-east","mode":"primary"},"payment":{"payment_id":"fb27d157","amount":12},"elapsed_ms":61} -> 0.063551s
+[1;32m$[0m curl -s -w ' -> %{time_total}s\n' -X POST localhost:8080/api/checkout -H 'content-type: application/json' -d '{"sku":"EU-HOODIE-03","qty":1}'
+{"order_id":"ce722fee","sku":"EU-HOODIE-03","qty":1,"warehouse":{"region":"eu-west","mode":"fallback"},"payment":{"payment_id":"5485853c","amount":55},"elapsed_ms":7951} -> 7.943318s

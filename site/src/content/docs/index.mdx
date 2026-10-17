@@ -1,17 +1,21 @@
 ---
 title: The mystery of the slow API
-description: Finding production bottlenecks in real time with OpenTelemetry. A hands-on workshop on your laptop.
+description: Finding production bottlenecks in real time with OpenTelemetry. A hands-on workshop on your laptop, in two flavours.
 template: splash
 hero:
   tagline: A user says the button takes 8 seconds. CPU is fine. Logs say 200 OK. Find out why, with metrics, traces and logs, on your own laptop.
   actions:
     - text: Prepare your laptop
-      link: /otel-workshop/prepare/
+      link: /otel-workshop/otelite/prepare/
       icon: right-arrow
       variant: primary
+      attrs:
+        data-flavour-link: prepare
     - text: Start the workshop
-      link: /otel-workshop/steps/00-complaint/
+      link: /otel-workshop/otelite/steps/00-complaint/
       icon: rocket
+      attrs:
+        data-flavour-link: steps/00-complaint
     - text: Repository
       link: https://github.com/iblancasa/otel-workshop
       icon: github
@@ -19,6 +23,27 @@ hero:
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import FlavourLanding from '../../components/FlavourLanding.astro';
+
+## Pick a flavour
+
+Same shop, same bug, same six steps. What differs is the observability
+stack the Collector sends everything to. The switch at the top of the
+sidebar changes flavour on any page; the buttons above follow the last one
+you visited.
+
+<CardGrid>
+  <LinkCard
+    title="otelite"
+    href="/otel-workshop/otelite/start/"
+    description="One small binary shows logs, traces and metrics in one dashboard. Two pods, 4 GB Docker VM. The default: start here if in doubt."
+  />
+  <LinkCard
+    title="CNCF tools"
+    href="/otel-workshop/cncf/start/"
+    description="Jaeger for traces, Prometheus for metrics, Loki for logs, Perses for dashboards. The tools you will meet at work. Five pods, 6 GB Docker VM."
+  />
+</CardGrid>
 
 ## What you will do
 
@@ -42,11 +67,12 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 Do this at home, on real wifi. It takes 5 to 15 minutes and needs Docker, kind and kubectl.
 
 ```bash
-git clone https://github.com/iblancasa/otel-workshop.git && cd otel-workshop
+git clone https://github.com/iblancasa/otel-workshop.git
+cd otel-workshop/otelite      # or otel-workshop/cncf
 make prepare
 ```
 
-<LinkCard title="Full preparation guide" href="/otel-workshop/prepare/" description="Requirements, what make prepare does, and the USB bundle for rooms with no wifi." />
+<LinkCard title="Full preparation guide" href="/otel-workshop/otelite/prepare/" description="Requirements, what make prepare does, and the USB bundle for rooms with no wifi." data-flavour-link="prepare" />
 
 ## The system
 
@@ -59,7 +85,16 @@ browser / loadgen
                              |     '-->  payments (Python)
                              '-->  "warehouse" (legacy client, simulated)
 
- every service  --OTLP-->  OpenTelemetry Collector  --OTLP-->  otelite
+ every service  --OTLP-->  OpenTelemetry Collector  --OTLP-->  the backend(s)
 ```
 
-Backend is [otelite](https://github.com/planetf1/otelite): a single binary that receives OTLP and shows logs, traces and metrics in one dashboard. Under 100 MB of memory, so every laptop in the room can run it.
+| | otelite flavour | CNCF flavour |
+|---|---|---|
+| traces | [otelite](https://github.com/planetf1/otelite) | [Jaeger](https://www.jaegertracing.io/) |
+| metrics | otelite | [Prometheus](https://prometheus.io/) |
+| logs | otelite | [Loki](https://grafana.com/oss/loki/) |
+| dashboards | otelite | [Perses](https://perses.dev/) |
+| Collector config | three processors to work around otelite's limits | none, two connectors to derive metrics from traces |
+| memory | under 100 MB | about 1 GB |
+
+<FlavourLanding />

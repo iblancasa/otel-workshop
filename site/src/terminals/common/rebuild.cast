@@ -1,0 +1,11 @@
+{"version":2,"width":100,"height":24,"timestamp":1792254834,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.sQDNXsUPrf","env":{"SHELL":"/bin/zsh"}}
+[0.019824, "o", "\u001b[1;32m$\u001b[0m grep -n 'start_as_current_span\\|set_status\\|record_exception' ../services/orders/warehouse.py\r\n"]
+[0.022483, "o", "7:  - span events for each timeout, record_exception + ERROR status at the end\r\n"]
+[0.022544, "o", "59:    with tracer.start_as_current_span(\"warehouse.reserve\") as span:\r\n"]
+[0.022571, "o", "74:                with tracer.start_as_current_span(\"warehouse.call_primary\") as call:\r\n"]
+[0.022623, "o", "96:            span.record_exception(last_exc)\r\n97:        span.set_status(Status(StatusCode.ERROR, f\"{region} unreachable, used fallback\"))\r\n"]
+[0.022626, "o", "99:        with tracer.start_as_current_span(\"warehouse.call_fallback\"):\r\n"]
+[0.835717, "o", "\u001b[1;32m$\u001b[0m BUILDKIT_PROGRESS=plain make rebuild-orders 2>&1 | grep -E '^(#[0-9]+ (DONE|naming)|->|loaded|deployment)' | cut -c1-110\r\n"]
+[4.298777, "o", "#1 DONE 0.0s\r\n#2 DONE 0.6s\r\n#3 DONE 0.0s\r\n#4 DONE 0.0s\r\n#5 DONE 0.0s\r\n#10 naming to docker.io/workshop/orders:latest done\r\n#10 DONE 0.0s\r\n-> workshop/orders:latest\r\nloaded 1 images into kind cluster otel-workshop-cncf\r\ndeployment.apps/orders restarted\r\n"]
+[4.298785, "o", "deployment \"orders\" successfully rolled out\r\n"]
+[5.109312, "x", "0"]

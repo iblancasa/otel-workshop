@@ -1,0 +1,31 @@
+# Two datasources: metrics and logs. "proxy" means the browser talks to
+# Perses and Perses talks to the backend, so nothing but the Perses port
+# needs to be reachable from the laptop.
+#
+# No Jaeger datasource: Perses' Jaeger plugin (0.1.0) calls the v1 HTTP API
+# (/api/traces, /api/services) and Jaeger 2.22 only serves /api/v3. Traces
+# are explored in the Jaeger UI, which is where the waterfall lives anyway.
+- kind: GlobalDatasource
+  metadata:
+    name: prometheus
+  spec:
+    default: true
+    plugin:
+      kind: PrometheusDatasource
+      spec:
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: http://prometheus.observability.svc.cluster.local:9090
+- kind: GlobalDatasource
+  metadata:
+    name: loki
+  spec:
+    default: true
+    plugin:
+      kind: LokiDatasource
+      spec:
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: http://loki.observability.svc.cluster.local:3100

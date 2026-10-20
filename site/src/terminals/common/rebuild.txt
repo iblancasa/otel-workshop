@@ -7,12 +7,13 @@
 99:        with tracer.start_as_current_span("warehouse.call_fallback"):
 [1;32m$[0m BUILDKIT_PROGRESS=plain make rebuild-orders 2>&1 | grep -E '^(#[0-9]+ (DONE|naming)|->|loaded|deployment)' | cut -c1-110
 #1 DONE 0.0s
-#2 DONE 0.6s
-#3 DONE 0.0s
+#2 DONE 0.0s
+#3 DONE 0.8s
 #4 DONE 0.0s
 #5 DONE 0.0s
-#10 naming to docker.io/workshop/orders:latest done
-#10 DONE 0.0s
+#6 DONE 0.0s
+#11 naming to docker.io/workshop/orders:latest done
+#11 DONE 0.0s
 -> workshop/orders:latest
 loaded 1 images into kind cluster otel-workshop-cncf
 deployment.apps/orders restarted

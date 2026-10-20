@@ -9,17 +9,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
- * Inventory service. Plain JDK, no frameworks.
+ * Inventory service. Plain JDK HTTP server, Log4j 2 for logging.
  *
  * Exposes GET /stock/{sku}. Backed by an in-memory "database" that is
  * deliberately a bit noisy in its logs (cache misses), to give investigators
  * something to look at that is NOT the problem.
  */
 public class Inventory {
-    private static final Logger LOG = Logger.getLogger("inventory");
+    private static final Logger LOG = LogManager.getLogger("inventory");
     private static final Map<String, Integer> STOCK = new ConcurrentHashMap<>(Map.of(
             "US-TSHIRT-01", 120,
             "US-MUG-02", 45,
@@ -46,7 +47,7 @@ public class Inventory {
             sleep(ThreadLocalRandom.current().nextInt(10, 40));
             available = STOCK.get(sku);
             if (available == null) {
-                LOG.warning("unknown sku=" + sku);
+                LOG.warn("unknown sku=" + sku);
                 respond(ex, 404, "{\"error\":\"unknown sku\"}");
                 return;
             }

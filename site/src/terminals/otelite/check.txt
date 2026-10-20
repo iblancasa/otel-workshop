@@ -3,6 +3,6 @@ Checking tools...
   [ok]   docker   29.5.2
   [ok]   kind     kind v0.27.0 go1.23.6 darwin/arm64
   [ok]   kubectl  Client Version: v1.37.1
-  [WARN] port 3000 is in use on this host. Use 'make port-forward' later, or free the port.
   [WARN] port 8080 is in use on this host. Use 'make port-forward' later, or free the port.
+  [WARN] port 3000 is in use on this host. Use 'make port-forward' later, or free the port.
 All good.

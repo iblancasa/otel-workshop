@@ -1,4 +1,4 @@
-{"version":2,"width":100,"height":24,"timestamp":1792254876,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.6r6IqwszYh","env":{"SHELL":"/bin/zsh"}}
-[0.031664, "o", "\u001b[1;32m$\u001b[0m curl -s localhost:9090/api/v1/query --data-urlencode 'query=sum by (client, server) (rate(traces_service_graph_request_total[5m]))' | python3 scripts/api-helpers.py edges\r\n"]
-[0.049218, "o", "    frontend -> orders         0.36 req/s\r\n      orders -> payments       0.34 req/s\r\n      orders -> inventory      0.34 req/s\r\n        user -> payments       0.00 req/s\r\n        user -> frontend       0.29 req/s\r\n"]
-[0.858465, "x", "0"]
+{"version":2,"width":100,"height":24,"timestamp":1792533471,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.dZrIFIcAzg","env":{"SHELL":"/bin/zsh"}}
+[0.029524, "o", "\u001b[1;32m$\u001b[0m curl -s localhost:9090/api/v1/query --data-urlencode 'query=sum by (client, server) (rate(traces_service_graph_request_total[5m]))' | python3 scripts/api-helpers.py edges\r\n"]
+[0.050931, "o", "      orders -> inventory      0.38 req/s\r\n      orders -> payments       0.38 req/s\r\n    frontend -> orders         0.39 req/s\r\n        user -> frontend       0.35 req/s\r\n        user -> payments       0.00 req/s\r\n"]
+[0.861557, "x", "0"]

@@ -13,3 +13,7 @@ spec:
             # Java: attach the agent at JVM start. No code change.
             - name: JAVA_TOOL_OPTIONS
               value: "-javaagent:/otel/opentelemetry-javaagent.jar"
+            # Log records get code.function.name, code.file.path and
+            # code.line.number. Off by default: the agent walks the stack on
+            # every log call. Same switch exists for the Logback appender.
+            - { name: OTEL_INSTRUMENTATION_LOG4J_APPENDER_EXPERIMENTAL_CAPTURE_CODE_ATTRIBUTES, value: "true" }

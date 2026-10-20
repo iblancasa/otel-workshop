@@ -1,14 +1,14 @@
 [1;32m$[0m TID=$(curl -s -G localhost:16686/api/v3/trace-summaries --data-urlencode 'query.service_name=frontend' --data-urlencode 'query.operation_name=POST /api/checkout' --data-urlencode 'query.duration_min=5s' --data-urlencode "query.start_time_min=$(date -u -v-30M +%Y-%m-%dT%H:%M:%SZ)" --data-urlencode "query.start_time_max=$(date -u +%Y-%m-%dT%H:%M:%SZ)" --data-urlencode 'query.search_depth=1' | python3 scripts/api-helpers.py first-trace-id)
 [1;32m$[0m curl -s -G localhost:3100/loki/api/v1/query_range --data-urlencode "query={service_name=~\".+\"} | trace_id=\"$TID\"" --data-urlencode since=1h --data-urlencode direction=forward | python3 scripts/api-helpers.py loglines
 frontend  info  checkout started
-orders    INFO  new order request sku=EU-POSTER-04 qty=1
+orders    INFO  new order request sku=EU-POSTER-04 qty=2
 orders    INFO  HTTP Request: GET http://inventory:8081/stock/EU-POSTER-04 "HTTP/1.1 200 OK"
 orders    WARN  warehouse reservation timed out after 2500ms (region=eu-west sku=EU-POSTER-04 attempt 1/3): warehouse-eu.inter
 orders    WARN  warehouse reservation timed out after 2500ms (region=eu-west sku=EU-POSTER-04 attempt 2/3): warehouse-eu.inter
 orders    WARN  warehouse reservation timed out after 2500ms (region=eu-west sku=EU-POSTER-04 attempt 3/3): warehouse-eu.inter
 orders    ERROR warehouse region eu-west unreachable after 3 attempts, using synchronous replica (slow path) for sku=EU-POSTER
-payments  INFO  charged order=6cb35f8c amount=9
+payments  INFO  charged order=aeb3ecdd amount=18
 orders    INFO  HTTP Request: POST http://payments:8002/charge "HTTP/1.1 200 OK"
-orders    INFO  order 6cb35f8c confirmed sku=EU-POSTER-04 region=eu-west mode=fallback
+orders    INFO  order aeb3ecdd confirmed sku=EU-POSTER-04 region=eu-west mode=fallback
 frontend  info  checkout completed
 frontend  warn  checkout was slow

@@ -68,7 +68,7 @@ OTEL_SERVICE_NAME: frontend          # who am I
 OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.observability.svc.cluster.local:4318
 OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
 OTEL_RESOURCE_ATTRIBUTES: deployment.environment=workshop,k8s.pod.name=$(POD_NAME)  # POD_NAME via downward API
-OTEL_SEMCONV_STABILITY_OPT_IN: http  # same metric names in all languages
+OTEL_SEMCONV_STABILITY_OPT_IN: http,code  # same metric and code.* names in all languages
 OTEL_METRIC_EXPORT_INTERVAL: "5000"  # export every 5 s so the workshop feels live
 ```
 
@@ -119,8 +119,10 @@ Then one backend per signal:
   and `nodejs_eventloop_utilization_ratio`.
 - **Loki**, through Perses [localhost:3000](http://localhost:3000),
   **Explore**, logs: `{service_name="orders"}`. Expand a line: `severity_text`,
-  `trace_id`, `span_id`, `code_function_name`, all there as structured
-  metadata.
+  `trace_id`, `span_id`, `code_function_name`, `code_file_path`,
+  `code_line_number`, all there as structured metadata. Same for
+  `{service_name="inventory"}`. The frontend lines have no `code_*`, see the
+  notes below.
 - **Perses** dashboard **slow-api**: the first row fills within a minute.
   The p95 is already telling you something.
 
@@ -132,7 +134,7 @@ Then one backend per signal:
 
 Each agent hooks into the libraries it knows: the HTTP server (Express,
 FastAPI, the JDK HttpServer), the HTTP clients (`fetch`, `httpx`), the loggers
-(winston, `logging`, `java.util.logging`). For every inbound request it starts
+(winston, `logging`, Log4j). For every inbound request it starts
 a **span**. For every outbound request it injects a `traceparent` header so
 the next service continues the same **trace**. Log records get the current
 trace and span id attached. The HTTP server hook also records a **histogram**
@@ -149,14 +151,26 @@ in mind for step 3.
 
 ## Notes for the curious
 
+- Where a log line came from in the code. Python and Java can attach
+  `code.function.name`, `code.file.path` and `code.line.number` to every
+  record, but both agents keep it off by default: it costs a stack walk per
+  log call. The overlay turns it on with `OTEL_PYTHON_LOG_CODE_ATTRIBUTES=true`
+  ([orders-python.yaml](https://github.com/iblancasa/otel-workshop/blob/main/k8s/apps/instrumented/orders-python.yaml))
+  and `OTEL_INSTRUMENTATION_LOG4J_APPENDER_EXPERIMENTAL_CAPTURE_CODE_ATTRIBUTES=true`
+  ([inventory-java.yaml](https://github.com/iblancasa/otel-workshop/blob/main/k8s/apps/instrumented/inventory-java.yaml);
+  the Logback appender has the same switch). Node.js has no equivalent: the
+  winston, pino and bunyan instrumentations forward what the logger knows,
+  and none of those loggers records the call site.
 - In Kubernetes you would not hand-write these env vars. The
   [OpenTelemetry Operator](https://opentelemetry.io/docs/platforms/kubernetes/operator/automatic/)
   injects them, and the agent itself, from one annotation on the pod. The
   mechanics are exactly what you just did.
 - The metric and attribute names you see come from the
   [HTTP semantic conventions](https://opentelemetry.io/docs/specs/semconv/http/).
-  `OTEL_SEMCONV_STABILITY_OPT_IN=http` selects the stable names in all three
+  `OTEL_SEMCONV_STABILITY_OPT_IN=http,code` selects the stable names in all three
   agents, see the [migration notes](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/).
+  The `code` token matters for Java only: without it the agent still writes
+  `code.function`, `code.filepath` and `code.lineno` on log records.
   Prometheus then applies its own naming on top; the mapping is in
   [The metrics, explained](/otel-workshop/cncf/reference/metrics/).
 - Per-language configuration beyond the common variables:

@@ -1,6 +1,6 @@
 [1;32m$[0m TID=$(curl -s 'localhost:3000/api/traces?limit=100' | python3 -c 'import sys,json; print([t["trace_id"] for t in json.load(sys.stdin)["traces"] if t["duration"] > 5e9 and t["has_errors"]][0])')
 [1;32m$[0m curl -s "localhost:3000/api/traces/$TID" | python3 -c 'import sys,json; [print(s["attributes"].get("service.name","").ljust(9), str(s["duration"]//1_000_000).rjust(5), "ms", s["status"]["code"].ljust(6), s["name"]) for s in json.load(sys.stdin)["spans"] if not s["name"].startswith("middleware")]'
-orders     2501 ms Error  warehouse.call_primary
+orders     2503 ms Error  warehouse.call_primary
 orders     2501 ms Error  warehouse.call_primary
 inventory     4 ms Unset  GET /stock/
 orders        6 ms Unset  GET

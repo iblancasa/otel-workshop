@@ -13,3 +13,6 @@ spec:
             - name: PYTHONPATH
               value: "/usr/local/lib/python3.12/site-packages/opentelemetry/instrumentation/auto_instrumentation"
             - { name: OTEL_PYTHON_LOG_CORRELATION, value: "true" }
+            # Log records get code.function.name, code.file.path and
+            # code.line.number. Off by default since 0.66b0.
+            - { name: OTEL_PYTHON_LOG_CODE_ATTRIBUTES, value: "true" }

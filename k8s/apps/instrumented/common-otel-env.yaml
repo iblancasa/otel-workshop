@@ -15,10 +15,12 @@
   path: /spec/template/spec/containers/0/env/-
   value: { name: OTEL_RESOURCE_ATTRIBUTES, value: "deployment.environment=workshop,k8s.pod.name=$(POD_NAME)" }
 # Stable HTTP semantic conventions everywhere, so the three languages
-# produce the same metric names (http.server.request.duration).
+# produce the same metric names (http.server.request.duration). "code" makes
+# the Java agent use the stable code.* names on log records (code.function.name
+# instead of code.function); Python and Node.js ignore that token.
 - op: add
   path: /spec/template/spec/containers/0/env/-
-  value: { name: OTEL_SEMCONV_STABILITY_OPT_IN, value: "http" }
+  value: { name: OTEL_SEMCONV_STABILITY_OPT_IN, value: "http,code" }
 # Short export intervals so the workshop feels live.
 - op: add
   path: /spec/template/spec/containers/0/env/-

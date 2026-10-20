@@ -1,11 +1,11 @@
 [1;32m$[0m kubectl -n shop logs deploy/loadgen --tail=10
-US-TSHIRT-01 -> 200 in 63 ms
-US-MUG-02 -> 200 in 64 ms
-US-MUG-02 -> 200 in 62 ms
-EU-HOODIE-03 -> 200 in 7947 ms
-US-MUG-02 -> 200 in 59 ms
-US-MUG-02 -> 200 in 57 ms
-US-MUG-02 -> 200 in 62 ms
-US-TSHIRT-01 -> 200 in 57 ms
-US-TSHIRT-01 -> 200 in 60 ms
+US-TSHIRT-01 -> 200 in 103 ms
+US-MUG-02 -> 502 in 5016 ms
 US-MUG-02 -> 200 in 61 ms
+US-MUG-02 -> 200 in 82 ms
+US-MUG-02 -> 200 in 73 ms
+US-MUG-02 -> 200 in 81 ms
+US-TSHIRT-01 -> 200 in 76 ms
+US-TSHIRT-01 -> 200 in 78 ms
+EU-HOODIE-03 -> 200 in 7972 ms
+EU-HOODIE-03 -> 200 in 7957 ms

@@ -1,4 +1,4 @@
-{"version":2,"width":100,"height":24,"timestamp":1792254875,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.6CKuUkGuWN","env":{"SHELL":"/bin/zsh"}}
-[0.024894, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/orders --tail=30 | grep -E 'WARNING|ERROR' | tail -3 | cut -c1-180\r\n"]
-[0.064633, "o", "2026-10-17 16:34:34,264 WARNING [orders.warehouse] [warehouse.py:84] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=\r\n2026-10-17 16:34:34,264 ERROR [orders.warehouse] [warehouse.py:91] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=Tr\r\n"]
-[0.874762, "x", "0"]
+{"version":2,"width":100,"height":24,"timestamp":1792533470,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.gUOJ571WB3","env":{"SHELL":"/bin/zsh"}}
+[0.023391, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/orders --tail=30 | grep -E 'WARNING|ERROR' | tail -3 | cut -c1-180\r\n"]
+[0.079508, "o", "2026-10-20 21:57:48,970 WARNING [orders] [app.py:51] [trace_id=3e5781cacc8857daa3be40b0186940ee span_id=e1a5cd92e5e7c341 resource.service.name=orders trace_sampled=True] - payment \r\n2026-10-20 21:57:50,596 WARNING [orders.warehouse] [warehouse.py:84] [trace_id=d9420cd20759aac55342011ae2e3a96d span_id=93d8d9ad3f3f2c82 resource.service.name=orders trace_sampled=\r\n2026-10-20 21:57:50,597 ERROR [orders.warehouse] [warehouse.py:91] [trace_id=d9420cd20759aac55342011ae2e3a96d span_id=93d8d9ad3f3f2c82 resource.service.name=orders trace_sampled=Tr\r\n"]
+[0.887871, "x", "0"]

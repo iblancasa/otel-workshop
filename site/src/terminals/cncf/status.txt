@@ -1,24 +1,24 @@
 [1;32m$[0m make status
-NAMESPACE            NAME                                                       READY   STATUS    RESTARTS   AGE     IP            NODE                               NOMINATED NODE   READINESS GATES
-kube-system          coredns-668d6bf9bc-kvlvl                                   1/1     Running   0          7m      10.244.0.3    otel-workshop-cncf-control-plane   <none>           <none>
-kube-system          coredns-668d6bf9bc-zjcsr                                   1/1     Running   0          7m      10.244.0.4    otel-workshop-cncf-control-plane   <none>           <none>
-kube-system          etcd-otel-workshop-cncf-control-plane                      1/1     Running   0          7m7s    172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
-kube-system          kindnet-bwjrr                                              1/1     Running   0          7m1s    172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
-kube-system          kube-apiserver-otel-workshop-cncf-control-plane            1/1     Running   0          7m7s    172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
-kube-system          kube-controller-manager-otel-workshop-cncf-control-plane   1/1     Running   0          7m7s    172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
-kube-system          kube-proxy-wx6bs                                           1/1     Running   0          7m1s    172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
-kube-system          kube-scheduler-otel-workshop-cncf-control-plane            1/1     Running   0          7m7s    172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
-local-path-storage   local-path-provisioner-7dc846544d-wwmgr                    1/1     Running   0          7m      10.244.0.2    otel-workshop-cncf-control-plane   <none>           <none>
-observability        jaeger-6cc6595579-k2nt7                                    1/1     Running   0          45s     10.244.0.30   otel-workshop-cncf-control-plane   <none>           <none>
-observability        loki-689776cf4f-sx5rc                                      1/1     Running   0          45s     10.244.0.31   otel-workshop-cncf-control-plane   <none>           <none>
-observability        otel-collector-65858bccc8-4pg4w                            1/1     Running   0          45s     10.244.0.33   otel-workshop-cncf-control-plane   <none>           <none>
-observability        perses-754667b5f4-96qcc                                    1/1     Running   0          6m48s   10.244.0.7    otel-workshop-cncf-control-plane   <none>           <none>
-observability        prometheus-64b9f98b4d-jcnnd                                1/1     Running   0          45s     10.244.0.32   otel-workshop-cncf-control-plane   <none>           <none>
-shop                 frontend-6846d697d8-4wt66                                  1/1     Running   0          101s    10.244.0.22   otel-workshop-cncf-control-plane   <none>           <none>
-shop                 inventory-5dcdbd7895-vscwg                                 1/1     Running   0          101s    10.244.0.23   otel-workshop-cncf-control-plane   <none>           <none>
-shop                 loadgen-7f955dc77d-jswfp                                   1/1     Running   0          6m20s   10.244.0.12   otel-workshop-cncf-control-plane   <none>           <none>
-shop                 orders-bcf496dc6-gg7fs                                     1/1     Running   0          101s    10.244.0.24   otel-workshop-cncf-control-plane   <none>           <none>
-shop                 payments-65c6b45985-5hpmw                                  1/1     Running   0          101s    10.244.0.25   otel-workshop-cncf-control-plane   <none>           <none>
+NAMESPACE            NAME                                                       READY   STATUS    RESTARTS   AGE   IP            NODE                               NOMINATED NODE   READINESS GATES
+kube-system          coredns-668d6bf9bc-9qztk                                   1/1     Running   0          58s   10.244.0.3    otel-workshop-cncf-control-plane   <none>           <none>
+kube-system          coredns-668d6bf9bc-mjc75                                   1/1     Running   0          58s   10.244.0.4    otel-workshop-cncf-control-plane   <none>           <none>
+kube-system          etcd-otel-workshop-cncf-control-plane                      1/1     Running   0          65s   172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
+kube-system          kindnet-fh9sn                                              1/1     Running   0          59s   172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
+kube-system          kube-apiserver-otel-workshop-cncf-control-plane            1/1     Running   0          65s   172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
+kube-system          kube-controller-manager-otel-workshop-cncf-control-plane   1/1     Running   0          66s   172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
+kube-system          kube-proxy-wt6b8                                           1/1     Running   0          59s   172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
+kube-system          kube-scheduler-otel-workshop-cncf-control-plane            1/1     Running   0          65s   172.18.0.2    otel-workshop-cncf-control-plane   <none>           <none>
+local-path-storage   local-path-provisioner-7dc846544d-r8m9w                    1/1     Running   0          58s   10.244.0.2    otel-workshop-cncf-control-plane   <none>           <none>
+observability        jaeger-696975dc9-p827z                                     1/1     Running   0          46s   10.244.0.5    otel-workshop-cncf-control-plane   <none>           <none>
+observability        loki-7d7778b7ff-d694n                                      1/1     Running   0          46s   10.244.0.6    otel-workshop-cncf-control-plane   <none>           <none>
+observability        otel-collector-557c9f56c8-fvvtj                            1/1     Running   0          46s   10.244.0.7    otel-workshop-cncf-control-plane   <none>           <none>
+observability        perses-754667b5f4-h7tkz                                    1/1     Running   0          46s   10.244.0.8    otel-workshop-cncf-control-plane   <none>           <none>
+observability        prometheus-67c77b4ffb-flsbr                                1/1     Running   0          46s   10.244.0.9    otel-workshop-cncf-control-plane   <none>           <none>
+shop                 frontend-6846d697d8-jqwq9                                  1/1     Running   0          14s   10.244.0.10   otel-workshop-cncf-control-plane   <none>           <none>
+shop                 inventory-5dcdbd7895-lmtnq                                 1/1     Running   0          14s   10.244.0.11   otel-workshop-cncf-control-plane   <none>           <none>
+shop                 loadgen-7f955dc77d-76r2d                                   1/1     Running   0          14s   10.244.0.12   otel-workshop-cncf-control-plane   <none>           <none>
+shop                 orders-7749c7b44c-5lftr                                    1/1     Running   0          14s   10.244.0.13   otel-workshop-cncf-control-plane   <none>           <none>
+shop                 payments-65c6b45985-49xvc                                  1/1     Running   0          14s   10.244.0.14   otel-workshop-cncf-control-plane   <none>           <none>
 [1;32m$[0m make urls
 
   Shop        http://localhost:8080

@@ -1,3 +1,4 @@
 [1;32m$[0m kubectl -n shop logs deploy/orders --tail=30 | grep -E 'WARNING|ERROR' | tail -3 | cut -c1-180
-2026-10-17 16:34:34,264 WARNING [orders.warehouse] [warehouse.py:84] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=
-2026-10-17 16:34:34,264 ERROR [orders.warehouse] [warehouse.py:91] [trace_id=ce4e9186af0874a17ae41437b63b92c7 span_id=091e0d92e2ee1f28 resource.service.name=orders trace_sampled=Tr
+2026-10-20 21:57:48,970 WARNING [orders] [app.py:51] [trace_id=3e5781cacc8857daa3be40b0186940ee span_id=e1a5cd92e5e7c341 resource.service.name=orders trace_sampled=True] - payment
+2026-10-20 21:57:50,596 WARNING [orders.warehouse] [warehouse.py:84] [trace_id=d9420cd20759aac55342011ae2e3a96d span_id=93d8d9ad3f3f2c82 resource.service.name=orders trace_sampled=
+2026-10-20 21:57:50,597 ERROR [orders.warehouse] [warehouse.py:91] [trace_id=d9420cd20759aac55342011ae2e3a96d span_id=93d8d9ad3f3f2c82 resource.service.name=orders trace_sampled=Tr

@@ -1,4 +1,4 @@
-{"version":2,"width":100,"height":24,"timestamp":1792254752,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.3Rj5MCm5Kt","env":{"SHELL":"/bin/zsh"}}
-[0.022623, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/loadgen --tail=10\r\n"]
-[0.055333, "o", "US-TSHIRT-01 -> 200 in 63 ms\r\nUS-MUG-02 -> 200 in 64 ms\r\nUS-MUG-02 -> 200 in 62 ms\r\nEU-HOODIE-03 -> 200 in 7947 ms\r\nUS-MUG-02 -> 200 in 59 ms\r\nUS-MUG-02 -> 200 in 57 ms\r\nUS-MUG-02 -> 200 in 62 ms\r\nUS-TSHIRT-01 -> 200 in 57 ms\r\nUS-TSHIRT-01 -> 200 in 60 ms\r\nUS-MUG-02 -> 200 in 61 ms\r\n"]
-[0.862294, "x", "0"]
+{"version":2,"width":100,"height":24,"timestamp":1792533357,"idle_time_limit":2.0,"command":"bash /var/folders/jb/hkvkhg2n2v5cvc5gc0vmf2000000gp/T/tmp.PxZGfuJQbM","env":{"SHELL":"/bin/zsh"}}
+[0.022465, "o", "\u001b[1;32m$\u001b[0m kubectl -n shop logs deploy/loadgen --tail=10\r\n"]
+[0.057386, "o", "US-TSHIRT-01 -> 200 in 103 ms\r\nUS-MUG-02 -> 502 in 5016 ms\r\nUS-MUG-02 -> 200 in 61 ms\r\nUS-MUG-02 -> 200 in 82 ms\r\nUS-MUG-02 -> 200 in 73 ms\r\nUS-MUG-02 -> 200 in 81 ms\r\nUS-TSHIRT-01 -> 200 in 76 ms\r\nUS-TSHIRT-01 -> 200 in 78 ms\r\nEU-HOODIE-03 -> 200 in 7972 ms\r\nEU-HOODIE-03 -> 200 in 7957 ms\r\n"]
+[0.866947, "x", "0"]

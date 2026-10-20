@@ -19,3 +19,6 @@ spec:
             # the console format. (Do NOT also set the older
             # OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED, you get duplicates.)
             - { name: OTEL_PYTHON_LOG_CORRELATION, value: "true" }
+            # Log records get code.function.name, code.file.path and
+            # code.line.number. Off by default since 0.66b0.
+            - { name: OTEL_PYTHON_LOG_CODE_ATTRIBUTES, value: "true" }
